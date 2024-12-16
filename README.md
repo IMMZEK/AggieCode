@@ -12,7 +12,7 @@
 
 ## Overview
 
-AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience for first-year engineering students engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug Python and C++ code while sharing outputs in real-time. AggieCode's intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor, fosters teamwork and streamlines the coding workflow for group lab sessions.
+AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience for first-year engineering students engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug Python and C++ code while sharing outputs in real-time. AggieCode's intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor.
 
 ## Key Features
 
