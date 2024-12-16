@@ -143,14 +143,3 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   [Y.js](https://github.com/yjs/yjs)
 *   [Judge0 API](https://api.judge0.com/)
 *   [Firebase](https://firebase.google.com/)
-
-## Contact
-
-For questions or feedback, please contact us at:
-
-*   Project Lead: \[Your Name] - \[Your Email]
-*   \[Your Team Members and Emails]
-
----
-
-**Note:** Remember to replace placeholders like `your-username`, `your-repo-name`, `logo.png`, `CONTRIBUTING.md`, `LICENSE`, your name, your email, and team member information with your actual project details. Also, create the `CONTRIBUTING.md` and `LICENSE` files as needed.
