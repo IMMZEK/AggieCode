@@ -2,7 +2,6 @@
 
 # AggieCode: Real-time Collaborative IDE for Students
 
-
 [![Build Status](https://github.com/IMMZEK/AggieCode/actions/workflows/build.yml/badge.svg)](https://github.com/IMMZEK/AggieCode/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -12,7 +11,7 @@
 
 ## Overview
 
-AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience for first-year engineering students engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug Python and C++ code while sharing outputs in real-time. AggieCode's intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor.
+AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience for first-year engineering students engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug code while sharing outputs in real-time. AggieCode's intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor.
 
 ## Key Features
 
@@ -26,12 +25,12 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   Inspired by VS Code, providing a familiar and intuitive coding experience.
     *   Responsive design for seamless use on various devices.
 *   **Secure Authentication:**
-    *   Firebase Authentication for secure user login and session management.
+    *   **OAuth 2.0 with Google as the identity provider** for secure user login and session management.
+    *   **Authorization Code Grant flow** for enhanced security.
+    *   **Backend server** to handle sensitive operations like token exchange and refresh.
 *   **Efficient Backend:**
-    *   Lightweight *Node.js (pending*) backend for code execution and synchronization.
+    *   Lightweight Node.js backend for code execution, synchronization, and handling OAuth 2.0 flows.
     *   Optimized for fast response times and minimal resource usage.
-*   **Demo-Ready:**
-    *   Easily deployable for personal showcases, classroom demonstrations, and local development.
 * **Theme Toggling**:
     * Light and Dark theme are available to provide the user a more personalized experience.
 
@@ -42,43 +41,65 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **Framework:** [Vue.js](https://vuejs.org/)
 *   **UI Library:** [Vuetify](https://vuetifyjs.com/) (Material Design components)
 *   **Code Editor:** [Monaco Editor](https://microsoft.github.io/monaco-editor/) (via [monaco-vue](https://www.npmjs.com/package/@guolao/vue-monaco-editor))
-*   **State Management:** [Pinia](https://pinia.vuejs.org/)
+*   **State Management:** [Vuex](https://vuex.vuejs.org/) (or [Pinia](https://pinia.vuejs.org/))
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/) (Optional, for rapid UI adjustments)
 *   **Icons**: [Font Awesome](https://fontawesome.com/)
+*   **OAuth 2.0 Handling:** [axios](https://axios-http.com/) for making requests to the backend for token management.
 
-### Backend (WIP)
+### Backend
 
-*   **Real-Time Collaboration:**
-    *   [Y.js](https://github.com/yjs/yjs) (CRDT-based real-time state management)
-    *   [y-websocket](https://github.com/yjs/y-websocket) (for document synchronization)
-    *   [Socket.IO](https://socket.io/) (for auxiliary real-time events)
+*   **Runtime:** [Node.js](https://nodejs.org/)
+*   **Framework:** [Express.js](https://expressjs.com/)
+*   **Authentication:**
+    *   **OAuth 2.0** using the **Authorization Code Grant** flow.
+    *   **Google as the identity provider.**
+    *   Secure handling of **Client Secret** and token exchange on the backend.
+*   **Real-Time Collaboration (Partially Implemented):**
+    *   [Y.js](https://github.com/yjs/yjs) (CRDT-based real-time state management) - *Planned*
+    *   [y-websocket](https://github.com/yjs/y-websocket) (for document synchronization) - *Planned*
+    *   [Socket.IO](https://socket.io/) (for auxiliary real-time events) - *Planned*
 *   **Code Execution:**
-    *   [Judge0 API](https://api.judge0.com/) (for server-side Python and C++ execution)
-    *   [Py2Wasm](https://pyscript.net/) (Optional, for browser-based Python execution)
+    *   [Judge0 API](https://api.judge0.com/) (for server-side Python and C++ execution) - *Planned*
+    *   [Pyodide](https://pyodide.org/en/stable/) (Optional, for browser-based Python execution) - *Planned*
 *   **Database:**
-    *   [PostgreSQL](https://www.postgresql.org/) (for persistent storage)
-    *   [Redis](https://redis.io/) (for in-memory caching)
-*   **Authentication:** [Firebase Auth](https://firebase.google.com/docs/auth)
+    *   [PostgreSQL](https://www.postgresql.org/) (for persistent storage) - *Planned*
+    *   [Redis](https://redis.io/) (for in-memory caching) - *Planned*
+
+### Infrastructure
+
+*   **Development:** Local development with the option to use the free tier of cloud providers.
+*   **Deployment (Demo/Initial Stages):**
+    *   **Free Tier Friendly:** Designed to be deployable on the free tiers of providers like DigitalOcean, Linode, or Vultr.
+    *   **Google Cloud Platform (GCP):**  Option to use GCP's free tier for initial development and testing (utilizing Cloud Functions or Cloud Run for the backend and leveraging the free tier limits for Cloud Storage).
 
 ### Monitoring and Testing
 
-*   **Error Tracking:** [Sentry](https://sentry.io/)
-*   **Performance Monitoring:** [Prometheus](https://prometheus.io/) + [Grafana](https://grafana.com/)
+*   **Error Tracking:** [Sentry](https://sentry.io/) - *Planned*
+*   **Performance Monitoring:** [Prometheus](https://prometheus.io/) + [Grafana](https://grafana.com/) - *Planned*
 *   **Frontend Testing:**
-    *   [Cypress](https://www.cypress.io/) (for end-to-end testing)
-    *   [Jest](https://jestjs.io/) (for unit testing)
+    *   [Cypress](https://www.cypress.io/) (for end-to-end testing) - *Planned*
+    *   [Jest](https://jestjs.io/) (for unit testing) - *Planned*
 *   **Backend Testing:**
-    *   [Mocha](https://mochajs.org/) or [Jest](https://jestjs.io/) with [supertest](https://github.com/visionmedia/supertest) (for API testing)
+    *   [Mocha](https://mochajs.org/) or [Jest](https://jestjs.io/) with [supertest](https://github.com/visionmedia/supertest) (for API testing) - *Planned*
 
 ## Project Roadmap
 
 ### Phase 1: Initial Setup (Completed)
 
-*   ✅ Set up Vue.js project with Vuetify and Pinia.
+*   ✅ Set up Vue.js project with Vuetify and Vuex/Pinia.
 *   ✅ Integrate Monaco Editor using `monaco-vue`.
 *   ✅ Implement basic routing (login, IDE workspace).
 
-### Phase 2: Collaboration (In Progress)
+### Phase 2: Authentication with OAuth 2.0 (Completed)
+
+*   ✅ Implement OAuth 2.0 Authorization Code Grant flow.
+*   ✅ Use Google as the identity provider.
+*   ✅ Create a backend server (Express.js) to handle token exchange and refresh.
+*   ✅ Securely store the Client Secret on the backend.
+*   ✅ Store access tokens and refresh tokens in the frontend.
+*   ✅ Implement token refresh logic.
+
+### Phase 3: Collaboration (In Progress)
 
 *   Integrate Y.js and `y-websocket` for real-time document synchronization.
 *   Implement Socket.IO for real-time event broadcasting.
@@ -86,31 +107,24 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   Cursor highlighting.
     *   File sharing.
 
-### Phase 3: Code Execution
+### Phase 4: Code Execution
 
 *   Integrate Judge0 API for server-side code execution.
 *   Design a shared output window.
-*   (Pending) Explore Py2Wasm for client-side Python execution.
+*   Explore Pyodide for client-side Python execution.
 
-### Phase 4: Authentication & Session Management
+### Phase 5: Session Management
 
-*   Integrate Firebase Auth.
-*   Implement session-based authentication and role management.
+*   Implement session-based user management.
 *   Enable joining specific lab sessions via session codes.
 
-### Phase 5: Finalize UI & Testing
+### Phase 6: Finalize UI & Testing
 
 *   Refine UI using Vuetify.
-*   Conduct comprehensive testing (real-time collaboration, edge cases).
+*   Conduct comprehensive testing (real-time collaboration, edge cases, security).
 *   Integrate Sentry for error tracking.
 
-### Phase 6: Demo Preparation
-
-*   Deploy the project (locally or cloud).
-*   Prepare sample lab exercises.
-*   Document demo flow and expected outcomes.
-
-## Architecture (WIP)
+## Architecture
 
 ### Frontend Components
 
@@ -119,19 +133,22 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **`OutputWindow.vue`:** Displays the output of code executed via Judge0.
 *   **`CollaborationPanel.vue`:** Shows a list of online collaborators and their cursor positions.
 *   **`Navbar.vue`:** Provides navigation, theme switching, and other global actions.
+*   **`OAuth2Callback.vue`:** Handles the redirect from Google after authorization, exchanges the code for tokens, and stores them.
+*   **`services/oauth2.js`:** Manages the OAuth 2.0 flow, including generating the authorization URL, exchanging the code for tokens, and refreshing tokens (by interacting with the backend).
+*   **`store/modules/oauth2.js` (Vuex):**  Manages the OAuth 2.0 state (access token, refresh token, expiration) in the Vuex store.
 
 ### Backend Architecture
 
 *   **API Endpoints:**
-    *   `POST /auth/login`: Handles user authentication via Firebase Auth.
-    *   `GET /files/tree`: Retrieves the file structure for the current project.
-    *   `POST /files/content`: Saves file content to the server (currently stored as text blobs in PostgreSQL for the demo).
-    *   `POST /execute`: Sends code to Judge0 for execution and returns the results.
-*   **WebSocket Events:**
+    *   `POST /api/token`: Handles the exchange of the authorization code for an access token and refresh token (securely using the Client Secret).
+    *   `POST /api/refresh`: Refreshes the access token using the refresh token.
+    *   `GET /api/config` (Optional): Provides public configuration information to the frontend (e.g., Google Client ID).
+    *   `POST /files/content`: Saves file content to the server (currently stored as text blobs in PostgreSQL for the demo). - *Planned*
+    *   `POST /execute`: Sends code to Judge0 for execution and returns the results. - *Planned*
+*   **WebSocket Events (Planned):**
     *   `cursor-update`: Broadcasts real-time cursor position changes to all collaborators in the same session.
     *   `file-update`: Synchronizes file content changes across all clients.
     *   `output-update`: Shares the output of code execution with all collaborators.
-
 
 ## Acknowledgements
 
@@ -140,7 +157,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   [Monaco Editor](https://microsoft.github.io/monaco-editor/)
 *   [Y.js](https://github.com/yjs/yjs)
 *   [Judge0 API](https://api.judge0.com/)
-*   [Firebase](https://firebase.google.com/)
+*   [Google Cloud Platform](https://cloud.google.com/)
 
 ## License
 
