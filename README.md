@@ -12,7 +12,7 @@
 
 ## Overview
 
-AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience for first-year engineering students engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug Python and C++ code while sharing outputs in real-time. AggieCode's intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor, fosters teamwork and streamlines the coding workflow for group lab sessions.
+AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience for first-year engineering students engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug Python and C++ code while sharing outputs in real-time. AggieCode's intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor.
 
 ## Key Features
 
@@ -20,7 +20,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   Shared file editing with live cursor synchronization.
     *   Simultaneous code editing by multiple users.
 *   **Multi-Language Support:**
-    *   Code execution for Python and C++.
+    *   Code execution for Python, C++, and more.
     *   Shared output window visible to all collaborators.
 *   **User-Friendly Interface:**
     *   Inspired by VS Code, providing a familiar and intuitive coding experience.
@@ -28,12 +28,10 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **Secure Authentication:**
     *   Firebase Authentication for secure user login and session management.
 *   **Efficient Backend:**
-    *   Lightweight Node.js backend for code execution and synchronization.
+    *   Lightweight *Node.js (pending*) backend for code execution and synchronization.
     *   Optimized for fast response times and minimal resource usage.
 *   **Demo-Ready:**
     *   Easily deployable for personal showcases, classroom demonstrations, and local development.
-* **Collapsable side pannels**:
-    * Inspired by VSCode, the side panels can be collaped or expanded to provide more room when needed.
 * **Theme Toggling**:
     * Light and Dark theme are available to provide the user a more personalized experience.
 
@@ -48,7 +46,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/) (Optional, for rapid UI adjustments)
 *   **Icons**: [Font Awesome](https://fontawesome.com/)
 
-### Backend
+### Backend (WIP)
 
 *   **Real-Time Collaboration:**
     *   [Y.js](https://github.com/yjs/yjs) (CRDT-based real-time state management)
@@ -82,11 +80,11 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 
 ### Phase 2: Collaboration (In Progress)
 
-*   ✅ Integrate Y.js and `y-websocket` for real-time document synchronization.
-*   ✅ Implement Socket.IO for real-time event broadcasting.
-*   ✅ Develop collaborative editing features:
-    *   ✅ Cursor highlighting.
-    *   ✅ File sharing.
+*   Integrate Y.js and `y-websocket` for real-time document synchronization.
+*   Implement Socket.IO for real-time event broadcasting.
+*   Develop collaborative editing features:
+    *   Cursor highlighting.
+    *   File sharing.
 
 ### Phase 3: Code Execution
 
@@ -112,7 +110,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   Prepare sample lab exercises.
 *   Document demo flow and expected outcomes.
 
-## Architecture
+## Architecture (WIP)
 
 ### Frontend Components
 
@@ -143,3 +141,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   [Y.js](https://github.com/yjs/yjs)
 *   [Judge0 API](https://api.judge0.com/)
 *   [Firebase](https://firebase.google.com/)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
