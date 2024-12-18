@@ -1,4 +1,4 @@
-# Place Holder for now
+# Note: This workflow is not properly implemented. It is just a template.
 name: Frontend CI
 
 on:

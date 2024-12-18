@@ -1,4 +1,4 @@
-# Place holder for now
+# Note: This workflow is not properly implemented. It is just a template.
 name: Backend CI
 
 on:
