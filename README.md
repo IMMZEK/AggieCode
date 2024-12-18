@@ -11,7 +11,7 @@
 
 ## Overview
 
-AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience for first-year engineering students engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug code while sharing outputs in real-time. AggieCode's intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor.
+AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) designed to enhance first-year engineering students' learning experience engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug code while sharing outputs in real time. AggieCode aims to provide an intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor, it also provides intelligent code autocompletion powered by Machine Learning.AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience of first-year engineering students in team-based lab environments. It empowers students to collaborate on writing, executing, and debugging code while sharing outputs in real time. AggieCode aims to provide an intuitive interface, inspired by Visual Studio Code, and is powered by the Monaco Editor. Additionally, it offers intelligent code autocompletion powered by Machine Learning.
 
 ## Key Features
 
@@ -31,6 +31,13 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **Efficient Backend:**
     *   Lightweight Node.js backend for code execution, synchronization, and handling OAuth 2.0 flows.
     *   Optimized for fast response times and minimal resource usage.
+*   **ML-Powered Code Autocompletion:**
+    *   **Intelligent code suggestions** powered by a **CodeBERT** model from Hugging Face.
+    *   **Context-aware autocompletion** to improve coding efficiency.
+    *   **Support for Python** (initially) with plans to expand to other languages.
+*   **Demo-Ready:**
+    *   Easily deployable for personal showcases, classroom demonstrations, and local development.
+    *   **Free Tier Friendly:** Designed to work within the free tier limits of cloud providers like DigitalOcean, Linode, or Vultr, as well as the option to utilize the free tier of Google Cloud Platform (GCP) for initial development and testing.
 * **Theme Toggling**:
     * Light and Dark theme are available to provide the user a more personalized experience.
 
@@ -54,6 +61,9 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   **OAuth 2.0** using the **Authorization Code Grant** flow.
     *   **Google as the identity provider.**
     *   Secure handling of **Client Secret** and token exchange on the backend.
+*   **ML Model Integration:**
+    *   [Hugging Face `Inference API`](https://huggingface.co/docs/api-inference/index) to load and run the **CodeBERT** model for autocompletion.
+    *   API endpoint (`/api/autocomplete`) to handle autocompletion requests.
 *   **Real-Time Collaboration (Partially Implemented):**
     *   [Y.js](https://github.com/yjs/yjs) (CRDT-based real-time state management) - *Planned*
     *   [y-websocket](https://github.com/yjs/y-websocket) (for document synchronization) - *Planned*
@@ -67,10 +77,10 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 
 ### Infrastructure
 
-*   **Development:** Local development with the option to use the free tier of cloud providers.
-*   **Deployment (Demo/Initial Stages):**
-    *   **Free Tier Friendly:** Designed to be deployable on the free tiers of providers like DigitalOcean, Linode, or Vultr.
-    *   **Google Cloud Platform (GCP):**  Option to use GCP's free tier for initial development and testing (utilizing Cloud Functions or Cloud Run for the backend and leveraging the free tier limits for Cloud Storage).
+*   **Development:** Local development with the option to use the free tier of cloud providers (for Demo Purposes as of now).
+*   **Deployment (Initial Stages):**
+    *   **Free Tier Friendly:** Designed to utilize the free tiers of GCP (as of now).
+    *   **Google Cloud Platform (GCP):**  Utilizes GCP's free tier for initial development and testing (utilizing Cloud Functions or Cloud Run for the backend and Cloud Storage).
 
 ### Monitoring and Testing
 
@@ -90,16 +100,34 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   ✅ Integrate Monaco Editor using `monaco-vue`.
 *   ✅ Implement basic routing (login, IDE workspace).
 
-### Phase 2: Authentication with OAuth 2.0 (Completed)
+### Phase 2: Authentication with OAuth 2.0 (In Progress)
 
-*   ✅ Implement OAuth 2.0 Authorization Code Grant flow.
-*   ✅ Use Google as the identity provider.
-*   ✅ Create a backend server (Express.js) to handle token exchange and refresh.
+*   Deciding Between:
+    *   A - Implement OAuth 2.0 Authorization Code Grant flow.
+    *   B - Use Google (Firebase) as the identity provider.
+*   Create a backend server (Express.js) to handle token exchange and refresh.
 *   ✅ Securely store the Client Secret on the backend.
-*   ✅ Store access tokens and refresh tokens in the frontend.
+*   Store access tokens and refresh tokens (if applicable) in the frontend (Vuex/Pinia and localStorage).
 *   ✅ Implement token refresh logic.
 
-### Phase 3: Collaboration (In Progress)
+### Phase 3: Basic ML Autocompletion (In Progress)
+
+*   ✅ Select a suitable pre-trained open-source model (**CodeBERT**).
+*   Create a backend API endpoint (`/api/autocomplete`) to handle autocompletion requests.
+*   Load the CodeBERT model and tokenizer using the Hugging Face `transformers` library.
+*   Implement input preprocessing and inference logic in the backend.
+*   Integrate the autocompletion API with the `CodeEditor.vue` component.
+*   Implement debouncing on the frontend.
+*   Display suggestions in the Monaco Editor.
+
+### Phase 4: Enhanced Autocompletion
+
+*   Fine-tune the CodeBERT model (if necessary) on a dataset of Python code.
+*   Optimize model inference for latency (experiment with `generate()` parameters).
+*   Implement basic caching on the backend.
+*   Improve context handling and UI/UX for displaying suggestions.
+
+### Phase 5: Collaboration (Partially Implemented)
 
 *   Integrate Y.js and `y-websocket` for real-time document synchronization.
 *   Implement Socket.IO for real-time event broadcasting.
@@ -107,29 +135,43 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   Cursor highlighting.
     *   File sharing.
 
-### Phase 4: Code Execution
+### Phase 6: Code Execution
 
 *   Integrate Judge0 API for server-side code execution.
 *   Design a shared output window.
 *   Explore Pyodide for client-side Python execution.
 
-### Phase 5: Session Management
+### Phase 7: Advanced Autocompletion and Language Expansion
+
+*   Add support for multiple languages (e.g., C++, Java, JavaScript).
+*   Implement more advanced features:
+    *   Type inference.
+    *   Snippet completion.
+
+### Phase 8: Session Management
 
 *   Implement session-based user management.
 *   Enable joining specific lab sessions via session codes.
 
-### Phase 6: Finalize UI & Testing
+### Phase 9: Finalize UI & Testing
 
-*   Refine UI using Vuetify.
-*   Conduct comprehensive testing (real-time collaboration, edge cases, security).
+*   Refine/Re-design UI using Vuetify.
+*   Implement comprehensive testing (real-time collaboration, edge cases, security).
 *   Integrate Sentry for error tracking.
+
+### Phase 10: Scaling and Refinement
+
+*   Migrate to a dedicated model serving framework (if needed).
+*   Scale infrastructure based on projected usage during the semester.
+*   Set up monitoring and alerting.
+*   (Reach) Establish a continuous training/fine-tuning pipeline.
 
 ## Architecture
 
 ### Frontend Components
 
 *   **`FileExplorer.vue`:** Manages the file tree, allowing users to create, open, rename, and delete files.
-*   **`CodeEditor.vue`:** The core Monaco Editor component for real-time collaborative coding.
+*   **`CodeEditor.vue`:** The core Monaco Editor component for real-time collaborative coding, now with ML-powered autocompletion using CodeBERT.
 *   **`OutputWindow.vue`:** Displays the output of code executed via Judge0.
 *   **`CollaborationPanel.vue`:** Shows a list of online collaborators and their cursor positions.
 *   **`Navbar.vue`:** Provides navigation, theme switching, and other global actions.
@@ -143,6 +185,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   `POST /api/token`: Handles the exchange of the authorization code for an access token and refresh token (securely using the Client Secret).
     *   `POST /api/refresh`: Refreshes the access token using the refresh token.
     *   `GET /api/config` (Optional): Provides public configuration information to the frontend (e.g., Google Client ID).
+    *   `POST /api/autocomplete`: Handles autocompletion requests, loads the CodeBERT model, performs inference, and returns suggestions.
     *   `POST /files/content`: Saves file content to the server (currently stored as text blobs in PostgreSQL for the demo). - *Planned*
     *   `POST /execute`: Sends code to Judge0 for execution and returns the results. - *Planned*
 *   **WebSocket Events (Planned):**
@@ -158,6 +201,8 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   [Y.js](https://github.com/yjs/yjs)
 *   [Judge0 API](https://api.judge0.com/)
 *   [Google Cloud Platform](https://cloud.google.com/)
+*   [Hugging Face Transformers](https://huggingface.co/docs/transformers/index)
+*   [CodeBERT](https://huggingface.co/microsoft/codebert-base)
 
 ## License
 
