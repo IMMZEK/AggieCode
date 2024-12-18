@@ -8,7 +8,7 @@
   import { onMounted } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import oauth2Service from '../services/oauth2';
-  import { useStore } from 'vuex'; // Or Pinia
+  import { useStore } from 'vuex';
   
   export default {
     setup() {

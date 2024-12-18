@@ -392,7 +392,7 @@ justify-content: space-between;
 align-items: center;
 padding: 0.5rem 1rem;
 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-z-index: 10; /* Ensure header stays on top */
+z-index: 10; /* Header should stay on top */
 }
 
 .header-left {
@@ -532,7 +532,7 @@ padding: 0.5rem;
 }
 
 .sidebar-title {
-flex-grow: 1; /* Allow the title to take up available space */
+flex-grow: 1; /* Allow the title to take up space */
 text-align: center; /* Center the title */
 margin-right: auto; /* Push the title to the left */
 }
@@ -741,6 +741,6 @@ color: var(--dark-text);
 }
 
 .fa-bug {
-color: red; /* Example color for the debug icon */
+color: red; /* Debug icon  color*/
 }
 </style>

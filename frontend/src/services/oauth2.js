@@ -1,3 +1,4 @@
+// Note: This might be replaced with Firebase Auth in the future.
 import axios from 'axios';
 
 // Constants for OAuth2 configuration

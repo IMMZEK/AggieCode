@@ -67,6 +67,7 @@ import { VueMonacoEditor } from "@guolao/vue-monaco-editor";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
 
+// Add the play icon to the FontAwesome library
 library.add(faPlay);
 
 export default {
@@ -86,6 +87,7 @@ export default {
   setup(props) {
     const code = ref(``);
 
+    // TODO: Make Python the default language
     const languages = ref([
       { value: "python", label: "Python" },
       { value: "javascript", label: "JavaScript" },
@@ -96,16 +98,20 @@ export default {
       { value: "json", label: "JSON" },
     ]);
 
+    // Set the initial theme based on the dark mode prop
+    // TODO: Use system theme preference
     const theme = ref(props.isDarkMode ? "vs-dark" : "vs");
     watch(() => props.isDarkMode, (newValue) => {
       theme.value = newValue ? "vs-dark" : "vs";
     });
 
+    // Available font sizes for the editor
     const fontSizes = ref([10, 12, 14, 16, 18, 20, 24, 28]);
     const fontSize = ref(14);
 
     const language = ref("python");
 
+    // Editor options
     const editorOptions = ref({
       automaticLayout: true,
       fontSize: fontSize.value,
@@ -113,77 +119,80 @@ export default {
       scrollBeyondLastLine: false,
     });
 
+    // Watch for changes in font size and update editor options
     watch(fontSize, (newFontSize) => {
       editorOptions.value = { ...editorOptions.value, fontSize: newFontSize };
     });
 
+    // Callback when the editor is mounted
     const onEditorMounted = (editor) => {
       console.log("Monaco Editor is ready:", editor);
     };
 
+    // Function to run the code
     const runCode = () => {
       console.log("Code is being executed...");
       console.log(code.value);
     };
 
+    // Update the code and language based on the active file when the component is mounted
+    // TODO: Remove once file system management is implemented
     onMounted(() => {
-  if (props.activeFile) {
-    // Update the default code based on the active file
-    switch (props.activeFile) {
-      case "main.js":
-        code.value = `// Welcome to AggieCode Collaborative IDE\n// This is JavaScript code!\n\nconsole.log("Hello, AggieCode!");`;
-        language.value = "javascript";
-        break;
-      case "App.vue":
-      case "CodeEditor.vue":
-        code.value = `<!-- ${props.activeFile} -->\n<!-- Your Vue.js code here -->`;
-        language.value = "html";
-        break;
-      case "index.html":
-        code.value = `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>AggieCode - Collaborative IDE</title>\n</head>\n<body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"><\/script>\n</body>\n</html>`;
-        language.value = "html";
-        break;
-      case "style.css":
-        code.value = `/* ${props.activeFile} */\n/* Your CSS code here */`;
-        language.value = "css";
-        break;
-      default:
-        code.value = `// Welcome to AggieCode Collaborative IDE\n// This is a new file!`;
-        // TODO: Default to Python with example code.
-        language.value = "javascript"; // Default to JavaScript
-        break;
-    }
-  }
-});
+      if (props.activeFile) {
+        switch (props.activeFile) {
+          case "main.js":
+            code.value = `// Welcome to AggieCode Collaborative IDE\n// This is JavaScript code!\n\nconsole.log("Hello, AggieCode!");`;
+            language.value = "javascript";
+            break;
+          case "App.vue":
+          case "CodeEditor.vue":
+            code.value = `<!-- ${props.activeFile} -->\n<!-- Your Vue.js code here -->`;
+            language.value = "html";
+            break;
+          case "index.html":
+            code.value = `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>AggieCode - Collaborative IDE</title>\n</head>\n<body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"><\/script>\n</body>\n</html>`;
+            language.value = "html";
+            break;
+          case "style.css":
+            code.value = `/* ${props.activeFile} */\n/* Your CSS code here */`;
+            language.value = "css";
+            break;
+          default:
+            code.value = `// Welcome to AggieCode Collaborative IDE\n// This is a new file!`;
+            language.value = "javascript"; // Default to JavaScript
+            break;
+        }
+      }
+    });
 
-watch(() => props.activeFile, (newFile) => {
-  if (newFile) {
-    // Update the code and language based on the active file
-    switch (newFile) {
-      case "main.js":
-        code.value = `// Welcome to AggieCode Collaborative IDE\n// This is JavaScript code!\n\nconsole.log("Hello, AggieCode!");`;
-        language.value = "javascript";
-        break;
-      case "App.vue":
-      case "CodeEditor.vue":
-        code.value = `<!-- ${newFile} -->\n<!-- Your Vue.js code here -->`;
-        language.value = "html";
-        break;
-      case "index.html":
-        code.value = `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>AggieCode - Collaborative IDE</title>\n</head>\n<body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"><\/script>\n</body>\n</html>`;
-        language.value = "html";
-        break;
-      case "style.css":
-        code.value = `/* ${newFile} */\n/* Your CSS code here */`;
-        language.value = "css";
-        break;
-      default:
-        code.value = `// Welcome to AggieCode Collaborative IDE\n// This is a new file!`;
-        language.value = "javascript"; // Default to JavaScript
-        break;
-    }
-  }
-});
+    // Watch for changes in the active file and update the code and language
+    watch(() => props.activeFile, (newFile) => {
+      if (newFile) {
+        switch (newFile) {
+          case "main.js":
+            code.value = `// Welcome to AggieCode Collaborative IDE\n// This is JavaScript code!\n\nconsole.log("Hello, AggieCode!");`;
+            language.value = "javascript";
+            break;
+          case "App.vue":
+          case "CodeEditor.vue":
+            code.value = `<!-- ${newFile} -->\n<!-- Your Vue.js code here -->`;
+            language.value = "html";
+            break;
+          case "index.html":
+            code.value = `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>AggieCode - Collaborative IDE</title>\n</head>\n<body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"><\/script>\n</body>\n</html>`;
+            language.value = "html";
+            break;
+          case "style.css":
+            code.value = `/* ${newFile} */\n/* Your CSS code here */`;
+            language.value = "css";
+            break;
+          default:
+            code.value = `// Welcome to AggieCode Collaborative IDE\n// This is a new file!`;
+            language.value = "javascript"; // Default to JavaScript
+            break;
+        }
+      }
+    });
 
     return {
       code,
