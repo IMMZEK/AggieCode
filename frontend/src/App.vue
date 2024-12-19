@@ -1,124 +1,134 @@
 <template>
   <div :class="['app', isDarkMode ? 'dark' : 'light']">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="header-left">
-        <button class="hamburger-menu" @click="toggleLeftSidebar">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-        <h1>AggieCode IDE</h1>
-      </div>
-      <div class="header-right">
-        <button @click="toggleDarkMode" class="theme-toggle">
-          <span v-if="isDarkMode">🌙</span>
-          <span v-else>☀️</span>
-        </button>
-        <div class="user-profile" @click="toggleProfileDropdown">
-          <span class="user-initials"></span>
-          <ul class="profile-dropdown" v-show="showProfileDropdown">
-            <li>Profile</li>
-            <li>Settings</li>
-            <li @click="logout">Logout</li>
-          </ul>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Layout -->
-    <div class="app-layout">
-      <!-- Left Sidebar (File Management) -->
-      <aside class="sidebar" :class="{ collapsed: isLeftSidebarCollapsed }">
-        <div class="sidebar-header">
-          <h2 v-show="!isLeftSidebarCollapsed" class="sidebar-title">Files</h2>
-          <button class="collapse-button" @click="toggleLeftSidebar">
-            <i
-              :class="
-                isLeftSidebarCollapsed
-                  ? 'fas fa-angle-right'
-                  : 'fas fa-angle-left'
-              "
-            ></i>
-          </button>
-        </div>
-        <ul v-show="!isLeftSidebarCollapsed" class="file-list">
-          <li
-            v-for="file in files"
-            :key="file.name"
-            :class="{ active: activeFile === file.name }"
-            @click="selectFile(file.name)"
-          >
-            <i :class="getFileIcon(file.name)"></i>
-            {{ file.name }}
-          </li>
-        </ul>
-      </aside>
-
-      <!-- Center: IDE Editor -->
-      <main class="editor-container">
-        <CodeEditor :isDarkMode="isDarkMode" :activeFile="activeFile" />
-      </main>
-
-      <!-- Right Sidebar -->
-      <aside class="right-sidebar" :class="{ collapsed: isRightSidebarCollapsed }">
-        <div class="sidebar-header">
-          <h2 v-show="!isRightSidebarCollapsed" class="sidebar-title">
-            {{ activeRightSidebarTabTitle }}
-          </h2>
-          <button class="collapse-button" @click="toggleRightSidebar">
-            <i
-              :class="
-                isRightSidebarCollapsed
-                  ? 'fas fa-angle-left'
-                  : 'fas fa-angle-right'
-              "
-            ></i>
-          </button>
-        </div>
-        <div class="tabs" v-show="!isRightSidebarCollapsed">
-          <button
-            v-for="tab in rightSidebarTabs"
-            :key="tab.id"
-            :class="{ active: activeRightSidebarTab === tab.id }"
-            @click="activeRightSidebarTab = tab.id"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-        <div class="tab-content" v-show="!isRightSidebarCollapsed">
-          <section class="terminal" v-if="activeRightSidebarTab === 'output'">
-            <div class="terminal-output">
-              <p>// Output will appear here...</p>
-            </div>
-          </section>
-          <section class="chat" v-if="activeRightSidebarTab === 'chat'">
-            <div class="chat-box">
-              <ul>
-                <li><strong>User1:</strong> Hello!</li>
-                <li><strong>User2:</strong> Hi, let's start coding!</li>
+    <div class="content-wrapper">
+      <div v-if="loading" class="full-height">Loading...</div>
+      <Login v-else-if="!user" class="full-height" />
+      <div v-else class="main-app-content">
+        <!-- Main app content -->
+        <header class="app-header">
+          <div class="header-left">
+            <button class="hamburger-menu" @click="toggleLeftSidebar">
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+            <h1>AggieCode IDE</h1>
+          </div>
+          <div class="header-right">
+            <button @click="toggleDarkMode" class="theme-toggle">
+              <span v-if="isDarkMode">🌙</span>
+              <span v-else>☀️</span>
+            </button>
+            <div class="user-profile" @click="toggleProfileDropdown">
+              <!-- Use user initials or profile picture if available -->
+              <span class="user-initials">{{ userInitials }}</span>
+              <ul class="profile-dropdown" v-show="showProfileDropdown">
+                <li>Profile</li>
+                <li>Settings</li>
+                <li @click="logout">Logout</li>
               </ul>
             </div>
-            <div class="chat-input-container">
-              <input type="text" placeholder="Type a message..." />
-              <button>Send</button>
+          </div>
+        </header>
+        <!-- Main Layout -->
+        <div class="app-layout">
+          <!-- Left Sidebar (File Management) -->
+          <aside class="sidebar" :class="{ collapsed: isLeftSidebarCollapsed }">
+            <div class="sidebar-header">
+              <h2 v-show="!isLeftSidebarCollapsed" class="sidebar-title">
+                Files
+              </h2>
+              <button class="collapse-button" @click="toggleLeftSidebar">
+                <i
+                  :class="
+                    isLeftSidebarCollapsed
+                      ? 'fas fa-angle-right'
+                      : 'fas fa-angle-left'
+                  "
+                ></i>
+              </button>
             </div>
-          </section>
-          <section class="debug" v-if="activeRightSidebarTab === 'debug'">
-            <!-- Placeholder content for debug panel -->
-            <p>Debugging controls and information will be here.</p>
-          </section>
-          <section
-            class="extensions"
-            v-if="activeRightSidebarTab === 'extensions'"
-          >
-            <!-- Placeholder content for extensions panel -->
-            <p>Available extensions will be listed here.</p>
-          </section>
-        </div>
-      </aside>
-    </div>
+            <ul v-show="!isLeftSidebarCollapsed" class="file-list">
+              <li
+                v-for="file in files"
+                :key="file.name"
+                :class="{ active: activeFile === file.name }"
+                @click="selectFile(file.name)"
+              >
+                <i :class="getFileIcon(file.name)"></i>
+                {{ file.name }}
+              </li>
+            </ul>
+          </aside>
 
+          <!-- Center: IDE Editor -->
+          <main class="editor-container">
+            <CodeEditor :isDarkMode="isDarkMode" :activeFile="activeFile" />
+          </main>
+
+          <!-- Right Sidebar -->
+          <aside
+            class="right-sidebar"
+            :class="{ collapsed: isRightSidebarCollapsed }"
+          >
+            <div class="sidebar-header">
+              <h2 v-show="!isRightSidebarCollapsed" class="sidebar-title">
+                {{ activeRightSidebarTabTitle }}
+              </h2>
+              <button class="collapse-button" @click="toggleRightSidebar">
+                <i
+                  :class="
+                    isRightSidebarCollapsed
+                      ? 'fas fa-angle-left'
+                      : 'fas fa-angle-right'
+                  "
+                ></i>
+              </button>
+            </div>
+            <div class="tabs" v-show="!isRightSidebarCollapsed">
+              <button
+                v-for="tab in rightSidebarTabs"
+                :key="tab.id"
+                :class="{ active: activeRightSidebarTab === tab.id }"
+                @click="activeRightSidebarTab = tab.id"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+            <div class="tab-content" v-show="!isRightSidebarCollapsed">
+              <section class="terminal" v-if="activeRightSidebarTab === 'output'">
+                <div class="terminal-output">
+                  <p>// Output will appear here...</p>
+                </div>
+              </section>
+              <section class="chat" v-if="activeRightSidebarTab === 'chat'">
+                <div class="chat-box">
+                  <ul>
+                    <li><strong>User1:</strong> Hello!</li>
+                    <li><strong>User2:</strong> Hi, let's start coding!</li>
+                  </ul>
+                </div>
+                <div class="chat-input-container">
+                  <input type="text" placeholder="Type a message..." />
+                  <button>Send</button>
+                </div>
+              </section>
+              <section class="debug" v-if="activeRightSidebarTab === 'debug'">
+                <!-- Placeholder content for debug panel -->
+                <p>Debugging controls and information will be here.</p>
+              </section>
+              <section
+                class="extensions"
+                v-if="activeRightSidebarTab === 'extensions'"
+              >
+                <!-- Placeholder content for extensions panel -->
+                <p>Available extensions will be listed here.</p>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
     <!-- Footer -->
     <footer class="app-footer">
       <p>Built with ❤️ by the AggieCode Team</p>
@@ -127,8 +137,11 @@
 </template>
 
 <script>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import CodeEditor from "./components/CodeEditor.vue";
+import Login from "./views/Login.vue";
+import { auth } from "./firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
   faJs,
   faPython,
@@ -144,6 +157,7 @@ library.add(faJs, faPython, faHtml5, faCss3Alt, faJava, faFile, faBug);
 export default {
   components: {
     CodeEditor,
+    Login,
   },
   setup() {
     const isDarkMode = ref(false);
@@ -214,11 +228,39 @@ export default {
       }
     };
 
-    const logout = () => {
-      // Placeholder for logout functionality
-      console.log("Logout");
-      showProfileDropdown.value = false;
+    const logout = async () => {
+      try {
+        await signOut(auth);
+        console.log("User signed out");
+        // State reset if needed
+      } catch (error) {
+        console.error("Error signing out:", error);
+      }
     };
+
+    // Firebase Authentication Logic
+    const user = ref(null);
+    const loading = ref(true);
+
+    onMounted(() => {
+      onAuthStateChanged(auth, (currentUser) => {
+        user.value = currentUser;
+        loading.value = false;
+      });
+    });
+
+    const userInitials = computed(() => {
+      if (user.value && user.value.displayName) {
+        return user.value.displayName
+          .split(" ")
+          .map((name) => name[0])
+          .join("")
+          .toUpperCase();
+      } else if (user.value && user.value.email) {
+        return user.value.email.substring(0, 2).toUpperCase();
+      }
+      return "";
+    });
 
     return {
       isDarkMode,
@@ -237,6 +279,9 @@ export default {
       selectFile,
       getFileIcon,
       logout,
+      user,
+      loading,
+      userInitials,
     };
   },
 };
@@ -245,478 +290,497 @@ export default {
 <style>
 /* Variables for Light Theme */
 :root {
---light-bg: #f6f8fa;
---light-sidebar-bg: #e8eaed;
---light-text: #24292e;
---light-border: #d1d5da;
---accent-color: #800000; /* Aggie Maroon */
---light-hover: #f0f2f5;
---light-active: #e0e4e8;
---light-button: #fafbfc;
+  --light-bg: #f6f8fa;
+  --light-sidebar-bg: #e8eaed;
+  --light-text: #24292e;
+  --light-border: #d1d5da;
+  --accent-color: #800000; /* Aggie Maroon */
+  --light-hover: #f0f2f5;
+  --light-active: #e0e4e8;
+  --light-button: #fafbfc;
 }
 
 /* Variables for Dark Theme */
 .dark {
---dark-bg: #181818;
---dark-sidebar-bg: #282828;
---dark-text: #f0f4f8;
---dark-border: #444;
---dark-hover: #404040;
---dark-active: #505050;
---dark-button: #383838;
+  --dark-bg: #181818;
+  --dark-sidebar-bg: #282828;
+  --dark-text: #f0f4f8;
+  --dark-border: #444;
+  --dark-hover: #404040;
+  --dark-active: #505050;
+  --dark-button: #383838;
 }
 
 /* Shared Styles */
 body,
 html {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-height: 100%;
-overflow: hidden;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  height: 100%;
+  overflow: hidden;
 }
 
 .app {
-display: flex;
-flex-direction: column;
-min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.full-height {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-app-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /* Light Mode Styles */
 .light {
-background-color: var(--light-bg);
-color: var(--light-text);
+  background-color: var(--light-bg);
+  color: var(--light-text);
 }
 
 .light .app-header {
-background-color: var(--accent-color);
-color: #fff;
+  background-color: var(--accent-color);
+  color: #fff;
 }
 
 .light .sidebar {
-background-color: var(--light-sidebar-bg);
-border-right: 1px solid var(--light-border);
+  background-color: var(--light-sidebar-bg);
+  border-right: 1px solid var(--light-border);
 }
 
 .light .sidebar-header {
-border-bottom: 1px solid var(--light-border);
+  border-bottom: 1px solid var(--light-border);
 }
 
 .light .file-list li {
-color: var(--light-text);
+  color: var(--light-text);
 }
 
 .light .file-list li.active,
 .light .file-list li:hover {
-background-color: var(--light-hover);
+  background-color: var(--light-hover);
 }
 
 .light .right-sidebar {
-background-color: var(--light-sidebar-bg);
-border-left: 1px solid var(--light-border);
+  background-color: var(--light-sidebar-bg);
+  border-left: 1px solid var(--light-border);
 }
 
 .light .terminal,
 .light .chat {
-background-color: var(--light-bg);
-color: var(--light-text);
-border: 1px solid var(--light-border);
+  background-color: var(--light-bg);
+  color: var(--light-text);
+  border: 1px solid var(--light-border);
 }
 
 .light .app-footer {
-background-color: var(--accent-color);
-color: #fff;
+  background-color: var(--accent-color);
+  color: #fff;
 }
 
 .light .styled-select {
-background-color: var(--light-button);
-color: var(--light-text);
-border: 1px solid var(--light-border);
+  background-color: var(--light-button);
+  color: var(--light-text);
+  border: 1px solid var(--light-border);
 }
 
 /* Dark Mode Styles */
 .dark {
-background-color: var(--dark-bg);
-color: var(--dark-text);
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
 }
 
 .dark .app-header {
-background-color: var(--dark-sidebar-bg);
+  background-color: var(--dark-sidebar-bg);
 }
 
 .dark .sidebar {
-background-color: var(--dark-sidebar-bg);
-border-right: 1px solid var(--dark-border);
+  background-color: var(--dark-sidebar-bg);
+  border-right: 1px solid var(--dark-border);
 }
 
 .dark .sidebar-header {
-border-bottom: 1px solid var(--dark-border);
+  border-bottom: 1px solid var(--dark-border);
 }
 
 .dark .file-list li {
-color: var(--dark-text);
+  color: var(--dark-text);
 }
 
 .dark .file-list li.active,
 .dark .file-list li:hover {
-background-color: var(--dark-hover);
+  background-color: var(--dark-hover);
 }
 
 .dark .right-sidebar {
-background-color: var(--dark-sidebar-bg);
-border-left: 1px solid var(--dark-border);
+  background-color: var(--dark-sidebar-bg);
+  border-left: 1px solid var(--dark-border);
 }
 
 .dark .terminal,
 .dark .chat {
-background-color: var(--dark-bg);
-color: var(--dark-text);
-border: 1px solid var(--dark-border);
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+  border: 1px solid var(--dark-border);
 }
 
 .dark .app-footer {
-background-color: var(--dark-sidebar-bg);
+  background-color: var(--dark-sidebar-bg);
 }
 
 .dark .styled-select {
-background-color: var(--dark-button);
-color: var(--dark-text);
-border: 1px solid var(--dark-border);
+  background-color: var(--dark-button);
+  color: var(--dark-text);
+  border: 1px solid var(--dark-border);
 }
 
 /* Header */
 .app-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 0.5rem 1rem;
-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-z-index: 10; /* Header should stay on top */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10; /* Header should stay on top */
 }
 
 .header-left {
-display: flex;
-align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .hamburger-menu {
-background: none;
-border: none;
-cursor: pointer;
-margin-right: 1rem;
-display: flex;
-flex-direction: column;
-justify-content: space-around;
-width: 20px;
-height: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 20px;
+  height: 20px;
 }
 
 .hamburger-menu span {
-display: block;
-width: 100%;
-height: 2px;
-background-color: var(--light-text);
-transition: transform 0.3s, opacity 0.3s;
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: var(--light-text);
+  transition: transform 0.3s, opacity 0.3s;
 }
 
 .dark .hamburger-menu span {
-background-color: var(--dark-text);
+  background-color: var(--dark-text);
 }
 
 .header-right {
-display: flex;
-align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .app-header h1 {
-margin: 0;
-font-size: 1.4rem;
-letter-spacing: 0.5px;
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.5px;
 }
 
 .user-profile {
-height: 36px;
-width: 36px;
-background-color: #fff;
-border-radius: 50%;
-cursor: pointer;
-position: relative;
-display: flex;
-align-items: center;
-justify-content: center;
+  height: 36px;
+  width: 36px;
+  background-color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dark .user-profile {
-background-color: var(--dark-button);
+  background-color: var(--dark-button);
 }
 
 .user-initials {
-font-size: 0.9rem;
-color: var(--accent-color);
+  font-size: 0.9rem;
+  color: var(--accent-color);
 }
 
 .dark .user-initials {
-color: var(--dark-text);
+  color: var(--dark-text);
 }
 
 .profile-dropdown {
-position: absolute;
-top: 40px;
-right: 0;
-background-color: var(--light-bg);
-border: 1px solid var(--light-border);
-border-radius: 4px;
-list-style: none;
-padding: 0.5rem 0;
-z-index: 20;
-min-width: 120px;
-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background-color: var(--light-bg);
+  border: 1px solid var(--light-border);
+  border-radius: 4px;
+  list-style: none;
+  padding: 0.5rem 0;
+  z-index: 20;
+  min-width: 120px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .dark .profile-dropdown {
-background-color: var(--dark-bg);
-border-color: var(--dark-border);
+  background-color: var(--dark-bg);
+  border-color: var(--dark-border);
 }
 
 .profile-dropdown li {
-padding: 0.5rem 1rem;
-cursor: pointer;
-white-space: nowrap;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .profile-dropdown li:hover {
-background-color: var(--light-hover);
+  background-color: var(--light-hover);
 }
 
 .dark .profile-dropdown li:hover {
-background-color: var(--dark-hover);
+  background-color: var(--dark-hover);
 }
 
 .theme-toggle {
-background: none;
-border: none;
-font-size: 1.5rem;
-cursor: pointer;
-margin-right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-right: 1rem;
 }
 
 /* Layout */
 .app-layout {
-display: flex;
-flex: 1;
+  display: flex;
+  flex: 1;
 }
 
 /* Sidebar (File Management) */
 .sidebar {
-width: 240px;
-transition: width 0.3s ease;
-user-select: none;
-position: relative;
-z-index: 5;
+  width: 240px;
+  transition: width 0.3s ease;
+  user-select: none;
+  position: relative;
+  z-index: 5;
 }
 
 .sidebar.collapsed {
-width: 48px; /* Width when collapsed */
+  width: 48px; /* Width when collapsed */
 }
 
 .sidebar.collapsed .sidebar-header h2 {
-display: none; /* Hide title when collapsed */
+  display: none; /* Hide title when collapsed */
 }
 
 .sidebar-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
 }
 
 .sidebar-title {
-flex-grow: 1; /* Allow the title to take up space */
-text-align: center; /* Center the title */
-margin-right: auto; /* Push the title to the left */
+  flex-grow: 1; /* Allow the title to take up space */
+  text-align: center; /* Center the title */
+  margin-right: auto; /* Push the title to the left */
 }
 
 .collapse-button {
-background: none;
-border: none;
-cursor: pointer;
-font-size: 1rem;
-color: var(--light-text);
-margin-left: auto; /* Push the button to the right */
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--light-text);
+  margin-left: auto; /* Push the button to the right */
 }
 
 .dark .collapse-button {
-color: var(--dark-text);
+  color: var(--dark-text);
 }
 
 .file-list {
-list-style: none;
-padding: 0;
+  list-style: none;
+  padding: 0;
 }
 
 .file-list li {
-display: flex;
-align-items: center;
-padding: 0.5rem 1rem;
-cursor: pointer;
-border-left: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-left: 3px solid transparent;
 }
 
 .file-list li i {
-margin-right: 0.5rem;
-width: 1.2em;
-text-align: center;
+  margin-right: 0.5rem;
+  width: 1.2em;
+  text-align: center;
 }
 
 .file-list li.active {
-border-left-color: var(--accent-color);
-background-color: var(--light-active);
+  border-left-color: var(--accent-color);
+  background-color: var(--light-active);
 }
 
 .file-list li:hover {
-background-color: var(--light-hover);
+  background-color: var(--light-hover);
 }
 
 .dark .file-list li.active,
 .dark .file-list li:hover {
-background-color: var(--dark-hover);
+  background-color: var(--dark-hover);
 }
 
 /* Editor */
 .editor-container {
-flex: 1;
-display: flex;
-flex-direction: column;
-padding: 1rem;
-overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  overflow: hidden;
 }
 
 /* Right Sidebar */
 .right-sidebar {
-width: 300px;
-transition: width 0.3s ease;
-user-select: none;
-position: relative;
-z-index: 5;
+  width: 300px;
+  transition: width 0.3s ease;
+  user-select: none;
+  position: relative;
+  z-index: 5;
 }
 
 .right-sidebar.collapsed {
-width: 48px;
+  width: 48px;
 }
 
 .right-sidebar.collapsed .tabs,
 .right-sidebar.collapsed .tab-content {
-display: none;
+  display: none;
 }
 
 .tabs {
-display: flex;
-border-bottom: 1px solid var(--light-border);
+  display: flex;
+  border-bottom: 1px solid var(--light-border);
 }
 
 .dark .tabs {
-border-bottom-color: var(--dark-border);
+  border-bottom-color: var(--dark-border);
 }
 
 .tabs button {
-background: none;
-border: none;
-border-bottom: 2px solid transparent;
-padding: 0.5rem 1rem;
-cursor: pointer;
-font-weight: 600;
-color: var(--light-text);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--light-text);
 }
 
 .dark .tabs button {
-color: var(--dark-text);
+  color: var(--dark-text);
 }
 
 .tabs button.active {
-border-bottom-color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
 }
 
 .tab-content {
-padding: 1rem;
+  padding: 1rem;
 }
 
 /* Terminal Section */
 .terminal-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
 }
 
 .run-button {
-padding: 0.5rem 1rem;
-border: none;
-border-radius: 4px;
-cursor: pointer;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 /* Chat Section */
 .chat-header {
-padding: 0.5rem 1rem;
+  padding: 0.5rem 1rem;
 }
 
 .chat-box {
-flex: 1;
-padding: 1rem;
-border: 1px solid var(--light-border);
-border-radius: 4px;
-margin-bottom: 1rem;
-max-height: 200px;
-overflow-y: auto;
+  flex: 1;
+  padding: 1rem;
+  border: 1px solid var(--light-border);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .dark .chat-box {
-border-color: var(--dark-border);
+  border-color: var(--dark-border);
 }
 
 .chat-box ul {
-list-style: none;
-padding: 0;
-margin: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .chat-box li {
-margin-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .chat-input-container {
-display: flex;
-align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .chat-input-container input {
-flex: 1;
-padding: 0.5rem;
-border: 1px solid var(--light-border);
-border-radius: 4px;
-margin-right: 0.5rem;
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--light-border);
+  border-radius: 4px;
+  margin-right: 0.5rem;
 }
 
 .dark .chat-input-container input {
-border-color: var(--dark-border);
-background-color: var(--dark-bg);
-color: var(--dark-text);
+  border-color: var(--dark-border);
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
 }
 
 .chat-input-container button {
-padding: 0.5rem 1rem;
-border: none;
-border-radius: 4px;
-background-color: var(--accent-color);
-color: white;
-cursor: pointer;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--accent-color);
+  color: white;
+  cursor: pointer;
 }
 
 /* Footer */
 .app-footer {
-text-align: center;
-padding: 0.75rem 0;
+  text-align: center;
+  padding: 0.75rem 0;
 }
 
 /* Add Font Awesome styles for icons */
@@ -727,7 +791,7 @@ padding: 0.75rem 0;
 .fa-python,
 .fa-java,
 .fa-file {
-color: var(--accent-color); 
+  color: var(--accent-color);
 }
 
 .dark .fa-js,
@@ -737,10 +801,10 @@ color: var(--accent-color);
 .dark .fa-python,
 .dark .fa-java,
 .dark .fa-file {
-color: var(--dark-text);
+  color: var(--dark-text);
 }
 
 .fa-bug {
-color: red; /* Debug icon  color*/
+  color: red; /* Debug icon  color*/
 }
 </style>

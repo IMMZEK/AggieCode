@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import App from './App.vue';
+import router from './router'; // Import the router
 import { install as VueMonacoEditorPlugin } from '@guolao/vue-monaco-editor';
 
 /* import the fontawesome core */
@@ -15,6 +16,8 @@ import { faUserSecret } from '@fortawesome/free-solid-svg-icons'
 library.add(faUserSecret)
 
 const app = createApp(App);
+
+app.use(router); // Use the router
 
 app.use(VueMonacoEditorPlugin, {
   paths: {
