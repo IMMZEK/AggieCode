@@ -25,11 +25,12 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   Inspired by VS Code, providing a familiar and intuitive coding experience.
     *   Responsive design for seamless use on various devices.
 *   **Secure Authentication:**
-    *   **OAuth 2.0 with Google as the identity provider** for secure user login and session management.
-    *   **Authorization Code Grant flow** for enhanced security.
-    *   **Backend server** to handle sensitive operations like token exchange and refresh.
+    *   **Firebase Authentication** for secure user login and session management.
 *   **Efficient Backend:**
-    *   Lightweight Node.js backend for code execution, synchronization, and handling OAuth 2.0 flows.
+    *   Node.js backend for the main application logic.
+    *   **Go-based microservice for secure code execution.**
+    *   **(Planned) Go-based microservice for ML-powered autocompletion.**
+    *   **(Planned) Go-based server for real-time collaboration using Y.js.**
     *   Optimized for fast response times and minimal resource usage.
 *   **ML-Powered Code Autocompletion:**
     *   **Intelligent code suggestions** powered by a **CodeBERT** model from Hugging Face.
@@ -51,26 +52,20 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **State Management:** [Vuex](https://vuex.vuejs.org/) (or [Pinia](https://pinia.vuejs.org/))
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/) (Optional, for rapid UI adjustments)
 *   **Icons**: [Font Awesome](https://fontawesome.com/)
-*   **OAuth 2.0 Handling:** [axios](https://axios-http.com/) for making requests to the backend for token management.
+*   **Authentication:** [Firebase Authentication](https://firebase.google.com/docs/auth)
+*   **Real-time Collaboration:** [Y.js](https://github.com/yjs/yjs)
 
 ### Backend
 
-*   **Runtime:** [Node.js](https://nodejs.org/)
-*   **Framework:** [Express.js](https://expressjs.com/)
-*   **Authentication:**
-    *   **OAuth 2.0** using the **Authorization Code Grant** flow.
-    *   **Google as the identity provider.**
-    *   Secure handling of **Client Secret** and token exchange on the backend.
-*   **ML Model Integration:**
-    *   [Hugging Face `Inference API`](https://huggingface.co/docs/api-inference/index) to load and run the **CodeBERT** model for autocompletion.
-    *   API endpoint (`/api/autocomplete`) to handle autocompletion requests.
+*   **Main Backend:** [Node.js](https://nodejs.org/) with [Express.js](https://expressjs.com/)
+*   **Code Execution Service:** **Go** with `net/http` or a framework like `Gin` or `Fiber`, **Docker** or **gVisor** or **WebAssembly** for sandboxing.
+*   **(Planned) ML Autocompletion Service:** Go, `net/http` (or framework), `gomlx` or `tensorflow/tensorflow/go`, potentially TensorFlow Serving or TorchServe.
+*   **(Planned) Real-Time Collaboration (Y.js) Server:** Go, `net/http` (or framework), `go-yjs` (or alternative), `gorilla/websocket`.
+*   **Authentication:** [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup) (for Node.js and Go)
 *   **Real-Time Collaboration (Partially Implemented):**
     *   [Y.js](https://github.com/yjs/yjs) (CRDT-based real-time state management) - *Planned*
     *   [y-websocket](https://github.com/yjs/y-websocket) (for document synchronization) - *Planned*
     *   [Socket.IO](https://socket.io/) (for auxiliary real-time events) - *Planned*
-*   **Code Execution:**
-    *   [Judge0 API](https://api.judge0.com/) (for server-side Python and C++ execution) - *Planned*
-    *   [Pyodide](https://pyodide.org/en/stable/) (Optional, for browser-based Python execution) - *Planned*
 *   **Database:**
     *   [PostgreSQL](https://www.postgresql.org/) (for persistent storage) - *Planned*
     *   [Redis](https://redis.io/) (for in-memory caching) - *Planned*
@@ -100,15 +95,10 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   ✅ Integrate Monaco Editor using `monaco-vue`.
 *   ✅ Implement basic routing (login, IDE workspace).
 
-### Phase 2: Authentication with OAuth 2.0 (In Progress)
+### Phase 2: Authentication with Firebase (In Progress)
 
-*   Deciding Between:
-    *   A - Implement OAuth 2.0 Authorization Code Grant flow.
-    *   B - Use Google (Firebase) as the identity provider.
-*   Create a backend server (Express.js) to handle token exchange and refresh.
-*   ✅ Securely store the Client Secret on the backend.
-*   Store access tokens and refresh tokens (if applicable) in the frontend (Vuex/Pinia and localStorage).
-*   ✅ Implement token refresh logic.
+*   ✅ Implement user authentication using Firebase Authentication.
+*   ✅ Store access tokens in the frontend (Vuex/Pinia and localStorage).
 
 ### Phase 3: Basic ML Autocompletion (In Progress)
 
@@ -135,11 +125,13 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   Cursor highlighting.
     *   File sharing.
 
-### Phase 6: Code Execution
+### Phase 6: Code Execution (In Progress)
 
-*   Integrate Judge0 API for server-side code execution.
-*   Design a shared output window.
-*   Explore Pyodide for client-side Python execution.
+*   **Develop a Go-based microservice for secure code execution.**
+*   **Use Docker, gVisor, or WebAssembly for sandboxing.**
+*   Implement resource limits (CPU, memory, time).
+*   Support multiple languages (Python, C++, Java, etc.).
+*   Integrate with the frontend to display output in a shared window.
 
 ### Phase 7: Advanced Autocompletion and Language Expansion
 
@@ -175,19 +167,30 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **`OutputWindow.vue`:** Displays the output of code executed via Judge0.
 *   **`CollaborationPanel.vue`:** Shows a list of online collaborators and their cursor positions.
 *   **`Navbar.vue`:** Provides navigation, theme switching, and other global actions.
-*   **`OAuth2Callback.vue`:** Handles the redirect from Google after authorization, exchanges the code for tokens, and stores them.
-*   **`services/oauth2.js`:** Manages the OAuth 2.0 flow, including generating the authorization URL, exchanging the code for tokens, and refreshing tokens (by interacting with the backend).
-*   **`store/modules/oauth2.js` (Vuex):**  Manages the OAuth 2.0 state (access token, refresh token, expiration) in the Vuex store.
+*   **`OAuth2Callback.vue`:** Replaced with Firebase for Authentification.
+*   **`services/auth.js`:** Manages Firebase authentication related logic such as token refresh and generating authorization URL.
+*   **`store/modules/auth.js` (Vuex):** Manages the Firebase authentication state.
 
 ### Backend Architecture
 
-*   **API Endpoints:**
-    *   `POST /api/token`: Handles the exchange of the authorization code for an access token and refresh token (securely using the Client Secret).
-    *   `POST /api/refresh`: Refreshes the access token using the refresh token.
-    *   `GET /api/config` (Optional): Provides public configuration information to the frontend (e.g., Google Client ID).
-    *   `POST /api/autocomplete`: Handles autocompletion requests, loads the CodeBERT model, performs inference, and returns suggestions.
-    *   `POST /files/content`: Saves file content to the server (currently stored as text blobs in PostgreSQL for the demo). - *Planned*
-    *   `POST /execute`: Sends code to Judge0 for execution and returns the results. - *Planned*
+*   **Main Backend (Node.js):**
+    *   Handles general API requests, user sessions (with Firebase), and potentially serves as a proxy to other services.
+    *   API Endpoints:
+        *   `POST /api/token`:  (Removed since we are using Firebase)
+        *   `POST /api/refresh`: (Removed since we are using Firebase)
+        *   `GET /api/config` (Optional): Provides public configuration information to the frontend (e.g., Google Client ID).
+        *   `POST /files/content`: Saves file content to the server (currently stored as text blobs in PostgreSQL for the demo). - *Planned*
+*   **Code Execution Service (Go):**
+    *   Provides secure code execution in a sandboxed environment.
+    *   API Endpoint:
+        *   `POST /api/execute`: Accepts code, language, and optional input, executes the code, and returns the output.
+*   **ML Autocompletion Service (Go) - *Planned*:**
+    *   Provides intelligent code suggestions using a pre-trained CodeBERT model.
+    *   API Endpoint:
+        *   `POST /api/autocomplete`: Accepts code, cursor position, and language, and returns a list of autocompletion suggestions.
+*   **Real-Time Collaboration Server (Go or Node.js) - *Partially Implemented*:**
+    *   Handles real-time document synchronization using Y.js and potentially other real-time events using Socket.IO.
+    *   May be implemented in Node.js (using `y-websocket`) or in Go (using `go-yjs` or an alternative technology if `go-yjs` is not viable).
 *   **WebSocket Events (Planned):**
     *   `cursor-update`: Broadcasts real-time cursor position changes to all collaborators in the same session.
     *   `file-update`: Synchronizes file content changes across all clients.
