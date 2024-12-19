@@ -97,8 +97,8 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 
 ### Phase 2: Authentication with Firebase (In Progress)
 
-*   ✅ Implement user authentication using Firebase Authentication.
-*   ✅ Store access tokens in the frontend (Vuex/Pinia and localStorage).
+*   Implement user authentication using Firebase Authentication.
+*   Store access tokens in the frontend (Vuex/Pinia and localStorage).
 
 ### Phase 3: Basic ML Autocompletion (In Progress)
 
