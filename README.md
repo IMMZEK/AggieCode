@@ -13,26 +13,26 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 ## Key Features
 
 *   **Real-time Collaborative Coding:**
-    *   Shared file editing with live cursor synchronization. (Planned)
-    *   Simultaneous code editing by multiple users. (Planned)
+    *   Shared file editing with live cursor synchronization.
+    *   Simultaneous code editing by multiple users.
 *   **Multi-Language Support:**
     *   Code execution for Python, C++, Java, JavaScript, and Go.
-    *   Shared output window visible to all collaborators. (Partially Implemented)
+    *   Shared output window visible to all collaborators.
 *   **User-Friendly Interface:**
     *   Inspired by VS Code, providing a familiar and intuitive coding experience.
     *   Responsive design for seamless use on various devices.
 *   **Secure Authentication:**
-    *   **Firebase Authentication** for secure user login and session management. (Implemented)
+    *   **Firebase Authentication** for secure user login and session management.
 *   **Efficient Backend:**
-    *   Node.js backend for the main application logic. (Partially Implemented)
-    *   **Go-based microservice for secure code execution.** (In Progress)
+    *   Node.js backend for the main application logic.
+    *   **Go-based microservice for secure code execution.**
     *   **(Planned) Go-based microservice for ML-powered autocompletion.**
     *   **(Planned) Go-based server for real-time collaboration using Y.js.**
     *   Optimized for fast response times and minimal resource usage.
 *   **ML-Powered Code Autocompletion:**
-    *   **Intelligent code suggestions** powered by a **CodeBERT** model from Hugging Face. (Planned)
-    *   **Context-aware autocompletion** to improve coding efficiency. (Planned)
-    *   **Support for Python** (initially) with plans to expand to other languages. (Planned)
+    *   **Intelligent code suggestions** powered by a **CodeBERT** model from Hugging Face.
+    *   **Context-aware autocompletion** to improve coding efficiency.
+    *   **Support for Python** (initially) with plans to expand to other languages.
 *   **Demo-Ready:**
     *   Easily deployable for personal showcases, classroom demonstrations, and local development.
     *   **Free Tier Friendly:** Designed to work within the free tier limits of cloud providers like DigitalOcean, Linode, or Vultr, as well as the option to utilize the free tier of Google Cloud Platform (GCP) for initial development and testing.
