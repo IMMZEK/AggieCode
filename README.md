@@ -127,7 +127,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **Develop a Go-based microservice for secure code execution.**
 *   **Use Docker, gVisor, or WebAssembly for sandboxing. (Partially Implemented - Docker in Progress, Sandboxing needs further implementation)**
 *   Implement resource limits (CPU, memory, time). (Planned)
-*   ✅ Support multiple languages (Python, C++, Java, etc.). (Partially Implemented - Basic execution, no strict resource limits)
+*   Support multiple languages (Python, C++, Java, etc.). (Partially Implemented - Basic execution, no strict resource limits)
 *   Integrate with the frontend to display output in a shared window. (Partially Implemented)
 
 ### Phase 7: Advanced Autocompletion and Language Expansion
