@@ -1,31 +1,80 @@
-# Note: This workflow is not properly implemented. It is just a template.
-name: Build
+name: Build CI
 
 on:
   push:
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
+  build-backend:
     runs-on: ubuntu-latest
-
     steps:
-      # Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Set up Node.js
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '20.13.0'
 
-      # Install dependencies
-      - name: Install dependencies
-        run: npm install
+      - name: Cache backend node modules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-node-modules-backend
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: backend/node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
 
-      # Run your build command
-      - name: Run build
-        run: npm run build
+      - name: Install dependencies (Backend)
+        run: |
+          cd backend
+          npm install
+
+      # TODO: Add a backend build step here (if needed in the future)
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.13.0'
+
+      - name: Cache frontend node modules
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-node-modules-frontend
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: Install dependencies (Frontend)
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
