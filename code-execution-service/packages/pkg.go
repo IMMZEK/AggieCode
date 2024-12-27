@@ -7,12 +7,16 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
+
+	"golang.org/x/time/rate"
 )
 
 var (
-	ErrInvalidRequest       = errors.New("The request parameters provided are invalid.")
-	ErrLanguageNotSupported = errors.New("The specified programming language is not supported.")
-	ErrMethodNotSupported   = errors.New("The specified method is not supported for execution.")
+	ErrInvalidRequest       = errors.New("the request parameters provided are invalid")
+	ErrLanguageNotSupported = errors.New("the specified programming language is not supported")
+	ErrMethodNotSupported   = errors.New("the specified method is not supported for execution")
+	ErrRateLimitExceeded    = errors.New("rate limit exceeded, please try again later")
 )
 
 type ExecutionRequest struct {
@@ -34,7 +38,10 @@ type ExecutionService struct {
 }
 
 type RateLimiter struct {
-	limit int
+	visitors map[string]*rate.Limiter
+	mu       sync.RWMutex
+	limit    rate.Limit
+	burst    int
 }
 
 type Sanitizer struct {
@@ -164,15 +171,18 @@ func NewExecutionService() *ExecutionService {
 			"java":   "java-executor",
 			"js":     "js-executor",
 			"python": "python-executor",
+			"go":     "go-executor",
 		},
-		RateLimiter: NewRateLimiter(),
+		RateLimiter: NewRateLimiter(100, 10), // 100 requests per minute, burst of 10
 		Sanitizer:   NewSanitizer(1000),
 	}
 }
 
-func NewRateLimiter() *RateLimiter {
+func NewRateLimiter(requestsPerMinute, burst int) *RateLimiter {
 	return &RateLimiter{
-		limit: 100,
+		visitors: make(map[string]*rate.Limiter),
+		limit:    rate.Limit(requestsPerMinute) / 60, // Convert to per-second rate
+		burst:    burst,
 	}
 }
 
@@ -180,6 +190,45 @@ func NewSanitizer(maxSize int) *Sanitizer {
 	return &Sanitizer{
 		maxCodeLength: maxSize,
 	}
+}
+
+func (rl *RateLimiter) getVisitor(ip string) *rate.Limiter {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	limiter, exists := rl.visitors[ip]
+	if !exists {
+		limiter = rate.NewLimiter(rl.limit, rl.burst)
+		rl.visitors[ip] = limiter
+	}
+
+	return limiter
+}
+
+func (rl *RateLimiter) cleanupVisitors() {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	for ip, limiter := range rl.visitors {
+		// Use Tokens() to check if the limiter has been inactive
+		if limiter.Tokens() == float64(rl.burst) {
+			delete(rl.visitors, ip)
+		}
+	}
+}
+
+func (rl *RateLimiter) Limit(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := r.RemoteAddr
+		limiter := rl.getVisitor(ip)
+
+		if !limiter.Allow() {
+			http.Error(w, ErrRateLimitExceeded.Error(), http.StatusTooManyRequests)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *ExecutionService) validateRequest(req *ExecutionRequest) error {
@@ -219,6 +268,7 @@ func (s *ExecutionService) HandleExecute(w http.ResponseWriter, r *http.Request)
 			StatusMessage: "Code Sanitization Error",
 		}
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(response)
 		return
 	}
@@ -233,10 +283,7 @@ func (s *ExecutionService) HandleExecute(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		response.Error = err.Error()
 		response.StatusMessage = "Runtime Error"
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-		return
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 
 	// Write the response
