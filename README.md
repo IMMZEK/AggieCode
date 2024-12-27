@@ -1,9 +1,6 @@
-# AggieCode
-
 # AggieCode: Real-time Collaborative IDE for Students
 
-<!-- [![Build Status](https://github.com/IMMZEK/AggieCode/actions/workflows/build.yml/badge.svg)](https://github.com/IMMZEK/AggieCode/actions/workflows/build.yml) -->
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![CI/CD Status](https://github.com/IMMZEK/AggieCode/actions/workflows/build.yml/badge.svg)](https://github.com/IMMZEK/AggieCode/actions/workflows/build.yml)
 
 <p align="center">
   <img src="docs/logo.jpg" alt="AggieCode Logo" width="300">
@@ -16,31 +13,31 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 ## Key Features
 
 *   **Real-time Collaborative Coding:**
-    *   Shared file editing with live cursor synchronization.
-    *   Simultaneous code editing by multiple users.
+    *   Shared file editing with live cursor synchronization. (Planned)
+    *   Simultaneous code editing by multiple users. (Planned)
 *   **Multi-Language Support:**
-    *   Code execution for Python, C++, and more.
-    *   Shared output window visible to all collaborators.
+    *   Code execution for Python, C++, Java, JavaScript, and Go.
+    *   Shared output window visible to all collaborators. (Partially Implemented)
 *   **User-Friendly Interface:**
     *   Inspired by VS Code, providing a familiar and intuitive coding experience.
     *   Responsive design for seamless use on various devices.
 *   **Secure Authentication:**
-    *   **Firebase Authentication** for secure user login and session management.
+    *   **Firebase Authentication** for secure user login and session management. (Implemented)
 *   **Efficient Backend:**
-    *   Node.js backend for the main application logic.
-    *   **Go-based microservice for secure code execution.**
+    *   Node.js backend for the main application logic. (Partially Implemented)
+    *   **Go-based microservice for secure code execution.** (In Progress)
     *   **(Planned) Go-based microservice for ML-powered autocompletion.**
     *   **(Planned) Go-based server for real-time collaboration using Y.js.**
     *   Optimized for fast response times and minimal resource usage.
 *   **ML-Powered Code Autocompletion:**
-    *   **Intelligent code suggestions** powered by a **CodeBERT** model from Hugging Face.
-    *   **Context-aware autocompletion** to improve coding efficiency.
-    *   **Support for Python** (initially) with plans to expand to other languages.
+    *   **Intelligent code suggestions** powered by a **CodeBERT** model from Hugging Face. (Planned)
+    *   **Context-aware autocompletion** to improve coding efficiency. (Planned)
+    *   **Support for Python** (initially) with plans to expand to other languages. (Planned)
 *   **Demo-Ready:**
     *   Easily deployable for personal showcases, classroom demonstrations, and local development.
     *   **Free Tier Friendly:** Designed to work within the free tier limits of cloud providers like DigitalOcean, Linode, or Vultr, as well as the option to utilize the free tier of Google Cloud Platform (GCP) for initial development and testing.
 * **Theme Toggling**:
-    * Light and Dark theme are available to provide the user a more personalized experience.
+    * Light and Dark theme are available to provide the user a more personalized experience. (Implemented)
 
 ## Technology Stack
 
@@ -53,15 +50,15 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/) (Optional, for rapid UI adjustments)
 *   **Icons**: [Font Awesome](https://fontawesome.com/)
 *   **Authentication:** [Firebase Authentication](https://firebase.google.com/docs/auth)
-*   **Real-time Collaboration:** [Y.js](https://github.com/yjs/yjs)
+*   **Real-time Collaboration:** [Y.js](https://github.com/yjs/yjs) (Planned)
 
 ### Backend
 
-*   **Main Backend:** [Node.js](https://nodejs.org/) with [Express.js](https://expressjs.com/)
-*   **Code Execution Service:** **Go** with `net/http` or a framework like `Gin` or `Fiber`, **Docker** or **gVisor** or **WebAssembly** for sandboxing.
-*   **(Planned) ML Autocompletion Service:** Go, `net/http` (or framework), `gomlx` or `tensorflow/tensorflow/go`, potentially TensorFlow Serving or TorchServe.
-*   **(Planned) Real-Time Collaboration (Y.js) Server:** Go, `net/http` (or framework), `go-yjs` (or alternative), `gorilla/websocket`.
-*   **Authentication:** [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup) (for Node.js and Go)
+*   **Main Backend:** [Node.js](https://nodejs.org/) with [Express.js](https://expressjs.com/) (Partially Implemented)
+*   **Code Execution Service:** **Go** with `net/http`, **Docker** (In Progress - Sandboxing Not Fully Implemented Yet)
+*   **(Planned) ML Autocompletion Service:** Go, `net/http`, `gomlx` or `tensorflow/tensorflow/go`, potentially TensorFlow Serving or TorchServe.
+*   **(Planned) Real-Time Collaboration (Y.js) Server:** Go, `net/http`, `go-yjs` (or alternative), `gorilla/websocket`.
+*   **Authentication:** [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup) (for Node.js)
 *   **Real-Time Collaboration (Partially Implemented):**
     *   [Y.js](https://github.com/yjs/yjs) (CRDT-based real-time state management) - *Planned*
     *   [y-websocket](https://github.com/yjs/y-websocket) (for document synchronization) - *Planned*
@@ -95,93 +92,93 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   ✅ Integrate Monaco Editor using `monaco-vue`.
 *   ✅ Implement basic routing (login, IDE workspace).
 
-### Phase 2: Authentication with Firebase (In Progress)
+### Phase 2: Authentication with Firebase (Completed)
 
-*   Implement user authentication using Firebase Authentication.
-*   Store access tokens in the frontend (Vuex/Pinia and localStorage).
+*   ✅ Implement user authentication using Firebase Authentication.
+*   ✅ Store access tokens in the frontend (Vuex/Pinia and localStorage).
 
 ### Phase 3: Basic ML Autocompletion (In Progress)
 
 *   ✅ Select a suitable pre-trained open-source model (**CodeBERT**).
-*   Create a backend API endpoint (`/api/autocomplete`) to handle autocompletion requests.
-*   Load the CodeBERT model and tokenizer using the Hugging Face `transformers` library.
-*   Implement input preprocessing and inference logic in the backend.
-*   Integrate the autocompletion API with the `CodeEditor.vue` component.
-*   Implement debouncing on the frontend.
-*   Display suggestions in the Monaco Editor.
+*   Create a backend API endpoint (`/api/autocomplete`) to handle autocompletion requests. (Planned)
+*   Load the CodeBERT model and tokenizer using the Hugging Face `transformers` library. (Planned)
+*   Implement input preprocessing and inference logic in the backend. (Planned)
+*   Integrate the autocompletion API with the `CodeEditor.vue` component. (Planned)
+*   Implement debouncing on the frontend. (Planned)
+*   Display suggestions in the Monaco Editor. (Planned)
 
 ### Phase 4: Enhanced Autocompletion
 
-*   Fine-tune the CodeBERT model (if necessary) on a dataset of Python code.
-*   Optimize model inference for latency (experiment with `generate()` parameters).
-*   Implement basic caching on the backend.
-*   Improve context handling and UI/UX for displaying suggestions.
+*   Fine-tune the CodeBERT model (if necessary) on a dataset of Python code. (Planned)
+*   Optimize model inference for latency (experiment with `generate()` parameters). (Planned)
+*   Implement basic caching on the backend. (Planned)
+*   Improve context handling and UI/UX for displaying suggestions. (Planned)
 
 ### Phase 5: Collaboration (Partially Implemented)
 
-*   Integrate Y.js and `y-websocket` for real-time document synchronization.
-*   Implement Socket.IO for real-time event broadcasting.
-*   Develop collaborative editing features:
+*   Integrate Y.js and `y-websocket` for real-time document synchronization. (Planned)
+*   Implement Socket.IO for real-time event broadcasting. (Planned)
+*   Develop collaborative editing features: (Planned)
     *   Cursor highlighting.
     *   File sharing.
 
 ### Phase 6: Code Execution (In Progress)
 
-*   **Develop a Go-based microservice for secure code execution.**
-*   **Use Docker, gVisor, or WebAssembly for sandboxing.**
-*   Implement resource limits (CPU, memory, time).
-*   Support multiple languages (Python, C++, Java, etc.).
-*   Integrate with the frontend to display output in a shared window.
+*   ** ✅ Develop a Go-based microservice for secure code execution.**
+*   **Use Docker, gVisor, or WebAssembly for sandboxing. (Partially Implemented - Docker in Progress, Sandboxing needs further implementation)**
+*   Implement resource limits (CPU, memory, time). (Planned)
+*   ✅ Support multiple languages (Python, C++, Java, etc.). (Partially Implemented - Basic execution, no strict resource limits)
+*   Integrate with the frontend to display output in a shared window. (Partially Implemented)
 
 ### Phase 7: Advanced Autocompletion and Language Expansion
 
-*   Add support for multiple languages (e.g., C++, Java, JavaScript).
-*   Implement more advanced features:
+*   Add support for multiple languages (e.g., C++, Java, JavaScript). (Planned)
+*   Implement more advanced features: (Planned)
     *   Type inference.
     *   Snippet completion.
 
 ### Phase 8: Session Management
 
-*   Implement session-based user management.
-*   Enable joining specific lab sessions via session codes.
+*   Implement session-based user management. (Planned)
+*   Enable joining specific lab sessions via session codes. (Planned)
 
 ### Phase 9: Finalize UI & Testing
 
-*   Refine/Re-design UI using Vuetify.
-*   Implement comprehensive testing (real-time collaboration, edge cases, security).
-*   Integrate Sentry for error tracking.
+*   Refine/Re-design UI using Vuetify. (In Progress)
+*   Implement comprehensive testing (real-time collaboration, edge cases, security). (Planned)
+*   Integrate Sentry for error tracking. (Planned)
 
 ### Phase 10: Scaling and Refinement
 
-*   Migrate to a dedicated model serving framework (if needed).
-*   Scale infrastructure based on projected usage during the semester.
-*   Set up monitoring and alerting.
-*   (Reach) Establish a continuous training/fine-tuning pipeline.
+*   Migrate to a dedicated model serving framework (if needed). (Planned)
+*   Scale infrastructure based on projected usage during the semester. (Planned)
+*   Set up monitoring and alerting. (Planned)
+*   (Reach) Establish a continuous training/fine-tuning pipeline. (Planned)
 
 ## Architecture
 
 ### Frontend Components
 
-*   **`FileExplorer.vue`:** Manages the file tree, allowing users to create, open, rename, and delete files.
-*   **`CodeEditor.vue`:** The core Monaco Editor component for real-time collaborative coding, now with ML-powered autocompletion using CodeBERT.
-*   **`OutputWindow.vue`:** Displays the output of code executed via Judge0.
-*   **`CollaborationPanel.vue`:** Shows a list of online collaborators and their cursor positions.
+*   **`FileExplorer.vue`:** Manages the file tree, allowing users to create, open, rename, and delete files. (Planned)
+*   **`CodeEditor.vue`:** The core Monaco Editor component for real-time collaborative coding, now with ML-powered autocompletion using CodeBERT. (Autocompletion Planned)
+*   **`OutputWindow.vue`:** Displays the output of code executed via Judge0. (Partially Implemented)
+*   **`CollaborationPanel.vue`:** Shows a list of online collaborators and their cursor positions. (Planned)
 *   **`Navbar.vue`:** Provides navigation, theme switching, and other global actions.
 *   **`OAuth2Callback.vue`:** Replaced with Firebase for Authentification.
-*   **`services/auth.js`:** Manages Firebase authentication related logic such as token refresh and generating authorization URL.
+*   **`services/auth.js`:** Manages Firebase authentication related logic such as token refresh and generating authorization URL. (Outdated: No longer needed)
 *   **`store/modules/auth.js` (Vuex):** Manages the Firebase authentication state.
 
 ### Backend Architecture
 
 *   **Main Backend (Node.js):**
-    *   Handles general API requests, user sessions (with Firebase), and potentially serves as a proxy to other services.
+    *   Handles general API requests, user sessions (with Firebase), and potentially serves as a proxy to other services. (Partially Implemented)
     *   API Endpoints:
         *   `POST /api/token`:  (Removed since we are using Firebase)
         *   `POST /api/refresh`: (Removed since we are using Firebase)
         *   `GET /api/config` (Optional): Provides public configuration information to the frontend (e.g., Google Client ID).
         *   `POST /files/content`: Saves file content to the server (currently stored as text blobs in PostgreSQL for the demo). - *Planned*
 *   **Code Execution Service (Go):**
-    *   Provides secure code execution in a sandboxed environment.
+    *   Provides secure code execution in a sandboxed environment. (In Progress)
     *   API Endpoint:
         *   `POST /api/execute`: Accepts code, language, and optional input, executes the code, and returns the output.
 *   **ML Autocompletion Service (Go) - *Planned*:**
@@ -189,7 +186,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
     *   API Endpoint:
         *   `POST /api/autocomplete`: Accepts code, cursor position, and language, and returns a list of autocompletion suggestions.
 *   **Real-Time Collaboration Server (Go or Node.js) - *Partially Implemented*:**
-    *   Handles real-time document synchronization using Y.js and potentially other real-time events using Socket.IO.
+    *   Handles real-time document synchronization using Y.js and potentially other real-time events using Socket.IO. (Planned)
     *   May be implemented in Node.js (using `y-websocket`) or in Go (using `go-yjs` or an alternative technology if `go-yjs` is not viable).
 *   **WebSocket Events (Planned):**
     *   `cursor-update`: Broadcasts real-time cursor position changes to all collaborators in the same session.
@@ -202,7 +199,7 @@ AggieCode is a web-based, real-time collaborative Integrated Development Environ
 *   [Vuetify](https://vuetifyjs.com/)
 *   [Monaco Editor](https://microsoft.github.io/monaco-editor/)
 *   [Y.js](https://github.com/yjs/yjs)
-*   [Judge0 API](https://api.judge0.com/)
+*   [Judge0 API](https://api.judge0.com/) (Not currently used but mentioned in original README)
 *   [Google Cloud Platform](https://cloud.google.com/)
 *   [Hugging Face Transformers](https://huggingface.co/docs/transformers/index)
 *   [CodeBERT](https://huggingface.co/microsoft/codebert-base)
