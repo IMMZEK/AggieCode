@@ -269,12 +269,15 @@ func (s *ExecutionService) HandleExecute(w http.ResponseWriter, r *http.Request)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(response)
+		err := json.NewEncoder(w).Encode(response)
+		if err != nil {
+			return
+		}
 		return
 	}
 
 	// Execute the code
-	output, err := ExecuteCode(req.Language, req.Code, req.Method)
+	output, err := ExecuteCode(req.Language, req.Code)
 	response := ExecutionResponse{
 		Output:        output,
 		StatusMessage: "Accepted",
@@ -294,7 +297,7 @@ func (s *ExecutionService) HandleExecute(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func ExecuteCode(language, code, method string) (string, error) {
+func ExecuteCode(language, code string) (string, error) {
 	containerName, ok := map[string]string{
 		"cpp":    "cpp-executor",
 		"java":   "java-executor",
