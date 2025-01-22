@@ -248,53 +248,82 @@ func (s *ExecutionService) validateRequest(req *ExecutionRequest) error {
 }
 
 func (s *ExecutionService) HandleExecute(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body
-	var req ExecutionRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, ErrInvalidRequest.Error(), http.StatusBadRequest)
+	// Set response headers
+	w.Header().Set("Content-Type", "application/json")
+
+	// Only allow POST method
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Validate the request parameters
+	// Parse the request body
+	var req ExecutionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		json.NewEncoder(w).Encode(ExecutionResponse{
+			Error:         "Invalid request format",
+			StatusMessage: "error",
+		})
+		return
+	}
+
+	// Validate the request
 	if err := s.validateRequest(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ExecutionResponse{
+			Error:         err.Error(),
+			StatusMessage: "error",
+		})
 		return
 	}
 
 	// Sanitize the code
 	if err := s.Sanitizer.SanitizeCode(req.Code, req.Language); err != nil {
-		response := ExecutionResponse{
+		json.NewEncoder(w).Encode(ExecutionResponse{
 			Error:         err.Error(),
-			StatusMessage: "Code Sanitization Error",
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		err := json.NewEncoder(w).Encode(response)
-		if err != nil {
-			return
-		}
+			StatusMessage: "error",
+		})
 		return
 	}
 
-	// Execute the code
-	output, err := ExecuteCode(req.Language, req.Code)
-	response := ExecutionResponse{
-		Output:        output,
-		StatusMessage: "Accepted",
+	// Get the container name for the language
+	containerName := s.containers[req.Language]
+
+	// Execute the code based on the language
+	var output string
+	var err error
+
+	switch req.Language {
+	case "python":
+		output, err = lang.ExecutePythonCode(containerName, req.Code)
+	case "js":
+		output, err = lang.ExecuteJsCode(containerName, req.Code)
+	case "java":
+		output, err = lang.ExecuteJavaCode(containerName, req.Code)
+	case "cpp":
+		output, err = lang.ExecuteCppCode(containerName, req.Code)
+	case "go":
+		output, err = lang.ExecuteGoCode(containerName, req.Code)
+	default:
+		json.NewEncoder(w).Encode(ExecutionResponse{
+			Error:         "Unsupported language",
+			StatusMessage: "error",
+		})
+		return
 	}
 
 	if err != nil {
-		response.Error = err.Error()
-		response.StatusMessage = "Runtime Error"
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-
-	// Write the response
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ExecutionResponse{
+			Error:         err.Error(),
+			StatusMessage: "error",
+		})
 		return
 	}
+
+	// Return successful response
+	json.NewEncoder(w).Encode(ExecutionResponse{
+		Output:        output,
+		StatusMessage: "success",
+	})
 }
 
 func ExecuteCode(language, code string) (string, error) {
