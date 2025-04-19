@@ -1,0 +1,19 @@
+load("@rules_nodejs//nodejs:defs.bzl", "node_binary", "npm_package")
+
+npm_package(
+    name = "npm",
+    package_json = "package.json",
+    package_lock_json = "package-lock.json",
+)
+
+node_binary(
+    name = "backend",
+    data = [
+        "app.js",
+        ":npm",  # Depend on the local npm packages installation
+        # Removed "//:node_modules"
+    ],
+    entry_point = "app.js",
+    # Ensure node_modules resolution works correctly
+    node_modules = ":npm",
+)

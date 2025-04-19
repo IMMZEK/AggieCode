@@ -1,0 +1,36 @@
+load("@rules_nodejs//nodejs:defs.bzl", "npm_package")
+load("@npm//:vite/package_json.bzl", vite_bin = "bin") # Make sure vite is declared in root package.json or via npm_install
+
+# Install npm dependencies based on package.json and package-lock.json
+npm_package(
+    name = "npm",
+    package_json = "package.json",
+    package_lock_json = "package-lock.json",
+)
+
+# Define a target to run the Vite build process
+vite_bin.vite_binary(
+    name = "build",
+    args = ["build"],
+    data = [
+        "index.html",
+        "package.json",
+        "package-lock.json",
+        "vite.config.js",
+        ":npm", # Depend on installed packages
+        # Removed "//:node_modules"
+        "//frontend/public",
+        "//frontend/src",
+    ],
+    node_modules = ":npm", # Point to the local npm installation
+    # Define the output directory for the build artifacts
+    output_dir = True,
+)
+
+# You might also want a target to run the dev server, e.g.:
+# vite_bin.vite_binary(
+#     name = "dev",
+#     args = ["dev"],
+#     data = [ ... ], # Similar dependencies as above
+#     node_modules = ":npm",
+# )

@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+
+go_rules_dependencies()
+go_register_toolchains()
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+gazelle_dependencies()
+
+go_library(
+    name = "code-execution-service_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/code-execution-service",
+    deps = [],
+)
+
+go_binary(
+    name = "code-execution-service",
+    embed = [":code-execution-service_lib"],
+    visibility = ["//visibility:public"],
+)
