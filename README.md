@@ -13,6 +13,28 @@
 
 AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) designed to enhance first-year engineering students' learning experience engaged in team-based lab environments. It empowers students to collaboratively write, execute, and debug code while sharing outputs in real time. AggieCode aims to provide an intuitive interface, inspired by Visual Studio Code and powered by the Monaco Editor, it also provides intelligent code autocompletion powered by Machine Learning.AggieCode is a web-based, real-time collaborative Integrated Development Environment (IDE) specifically designed to enhance the learning experience of first-year engineering students in team-based lab environments. It empowers students to collaborate on writing, executing, and debugging code while sharing outputs in real time. AggieCode aims to provide an intuitive interface, inspired by Visual Studio Code, and is powered by the Monaco Editor. Additionally, it offers intelligent code autocompletion powered by Machine Learning.
 
+## Development
+
+### Bazel Setup
+
+AggieCode uses Bazel as its build system for consistent and reproducible builds across all environments. The current Bazel setup includes:
+
+- Root-level BUILD.bazel file for project-wide targets
+- Module-specific BUILD.bazel files in respective directories
+- Centralized dependency management
+
+#### Key Bazel Commands
+
+- Build and test all targets:
+  ```
+  bazel build //:all
+  ```
+
+- Run frontend development server:
+  ```
+  bazel run //frontend:dev
+  ```
+
 ## Key Features
 
 *   **Real-time Collaborative Coding:**
