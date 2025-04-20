@@ -1,4 +1,4 @@
-name: Build CI
+name: Build and Test CI
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build-backend:
+  backend-ci: # Renamed job for clarity
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -38,9 +38,15 @@ jobs:
           cd backend
           npm install
 
+      # Add this step to run backend tests
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test # Assumes your tests are run with 'npm test'
+
       # TODO: Add a backend build step here (if needed in the future)
 
-  build-frontend:
+  frontend-ci: # Renamed job for clarity
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -67,6 +73,12 @@ jobs:
         run: |
           cd frontend
           npm install
+
+      # Add this step to run frontend tests
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm test # Assumes your tests are run with 'npm test'
 
       - name: Build frontend
         run: |
