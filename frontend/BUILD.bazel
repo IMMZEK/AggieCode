@@ -30,7 +30,6 @@ write_file(
         "// Change to frontend directory and run vite build",
         "process.chdir(frontendDir);",
         "console.log('Building frontend with Vite...');",
-        "execSync('npm install @guolao/vue-monaco-editor', { stdio: 'inherit' });",
         "execSync('npx vite build', { stdio: 'inherit' });",
     ],
 )
@@ -51,7 +50,6 @@ write_file(
         "// Change to frontend directory and run vite",
         "process.chdir(frontendDir);",
         "console.log('Starting Vite development server...');",
-        "execSync('npm install @guolao/vue-monaco-editor', { stdio: 'inherit' });",
         "execSync('npx vite', { stdio: 'inherit' });",
     ],
 )
