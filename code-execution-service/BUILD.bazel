@@ -1,30 +1,18 @@
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
-
-go_rules_dependencies()
-
-go_register_toolchains()
-
-gazelle_dependencies()
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "code-execution-service_lib",
+    name = "code_execution_service_lib",
     srcs = ["main.go"],
-    importpath = "github.com/sourcegraph/code-execution-service",
-    deps = [],
+    importpath = "aggiecode.com/users/cesarmagana/documents/github/aggiecode/code-execution-service",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//code-execution-service/packages:packages",
+        "@com_github_gorilla_mux//:go_default_library",
+    ],
 )
 
 go_binary(
     name = "code-execution-service",
-    embed = [":go_default_library"],
+    embed = [":code_execution_service_lib"],
     visibility = ["//visibility:public"],
-)
-
-go_library(
-    name = "go_default_library",
-    srcs = ["main.go"],
-    importpath = "aggiecode.com/users/cesarmagana/documents/github/aggiecode/code-execution-service",
-    visibility = ["//visibility:private"],
-    deps = ["@com_github_gorilla_mux//:go_default_library"],
 )

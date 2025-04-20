@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	pkg "code-execution-service/packages"
+	pkg "aggiecode.com/users/cesarmagana/documents/github/aggiecode/code-execution-service/packages"
 
 	"github.com/gorilla/mux"
 )

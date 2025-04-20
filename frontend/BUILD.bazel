@@ -63,6 +63,7 @@ js_binary(
         ":frontend_srcs",
     ],
     entry_point = ":vite_build.js",
+    visibility = ["//visibility:public"],
 )
 
 # Development server target - runs the vite dev script
@@ -72,6 +73,7 @@ js_binary(
         ":frontend_srcs",
     ],
     entry_point = ":vite_dev.js",
+    visibility = ["//visibility:public"],
 )
 
 # Create a placeholder dist file
@@ -86,4 +88,5 @@ pkg_tar(
     name = "dist_tar",
     srcs = [":placeholder_dist"],
     package_dir = "dist",
+    visibility = ["//visibility:public"],
 )
