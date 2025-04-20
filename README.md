@@ -80,9 +80,9 @@ AggieCode uses Bazel as its build system for consistent and reproducible builds 
 ### Backend
 
 *   **Main Backend:** [Node.js](https://nodejs.org/) with [Express.js](https://expressjs.com/)
-*   **Code Execution Service:** **Go** with `net/http` or a framework like `Gin` or `Fiber`, **Docker** or **gVisor** or **WebAssembly** for sandboxing.
-*   **(Planned) ML Autocompletion Service:** Go, `net/http` (or framework), `gomlx` or `tensorflow/tensorflow/go`, potentially TensorFlow Serving or TorchServe.
-*   **(Planned) Real-Time Collaboration (Y.js) Server:** Go, `net/http` (or framework), `go-yjs` (or alternative), `gorilla/websocket`.
+*   **Code Execution Service:** **Go** with net/http or a framework like Gin or Fiber, **Docker** or **gVisor** or **WebAssembly** for sandboxing.
+*   **(Planned) ML Autocompletion Service:** Go, net/http (or framework), gomlx or tensorflow/tensorflow/go, potentially TensorFlow Serving or TorchServe.
+*   **(Planned) Real-Time Collaboration (Y.js) Server:** Go, net/http (or framework), go-yjs (or alternative), gorilla/websocket.
 *   **Authentication:** [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup) (for Node.js and Go)
 *   **Real-Time Collaboration (Partially Implemented):**
     *   [Y.js](https://github.com/yjs/yjs) (CRDT-based real-time state management) - *Planned*
@@ -114,7 +114,7 @@ AggieCode uses Bazel as its build system for consistent and reproducible builds 
 ### Phase 1: Initial Setup (Completed)
 
 *   ✅ Set up Vue.js project with Vuetify and Vuex/Pinia.
-*   ✅ Integrate Monaco Editor using `monaco-vue`.
+*   ✅ Integrate Monaco Editor using monaco-vue.
 *   ✅ Implement basic routing (login, IDE workspace).
 
 ### Phase 2: Authentication with Firebase (In Progress)
@@ -125,23 +125,23 @@ AggieCode uses Bazel as its build system for consistent and reproducible builds 
 ### Phase 3: Basic ML Autocompletion (In Progress)
 
 *   ✅ Select a suitable pre-trained open-source model (**CodeBERT**).
-*   Create a backend API endpoint (`/api/autocomplete`) to handle autocompletion requests.
-*   Load the CodeBERT model and tokenizer using the Hugging Face `transformers` library.
+*   Create a backend API endpoint (/api/autocomplete) to handle autocompletion requests.
+*   Load the CodeBERT model and tokenizer using the Hugging Face transformers library.
 *   Implement input preprocessing and inference logic in the backend.
-*   Integrate the autocompletion API with the `CodeEditor.vue` component.
+*   Integrate the autocompletion API with the CodeEditor.vue component.
 *   Implement debouncing on the frontend.
 *   Display suggestions in the Monaco Editor.
 
 ### Phase 4: Enhanced Autocompletion
 
 *   Fine-tune the CodeBERT model (if necessary) on a dataset of Python code.
-*   Optimize model inference for latency (experiment with `generate()` parameters).
+*   Optimize model inference for latency (experiment with generate() parameters).
 *   Implement basic caching on the backend.
 *   Improve context handling and UI/UX for displaying suggestions.
 
 ### Phase 5: Collaboration (Partially Implemented)
 
-*   Integrate Y.js and `y-websocket` for real-time document synchronization.
+*   Integrate Y.js and y-websocket for real-time document synchronization.
 *   Implement Socket.IO for real-time event broadcasting.
 *   Develop collaborative editing features:
     *   Cursor highlighting.
@@ -184,39 +184,39 @@ AggieCode uses Bazel as its build system for consistent and reproducible builds 
 
 ### Frontend Components
 
-*   **`FileExplorer.vue`:** Manages the file tree, allowing users to create, open, rename, and delete files.
-*   **`CodeEditor.vue`:** The core Monaco Editor component for real-time collaborative coding, now with ML-powered autocompletion using CodeBERT.
-*   **`OutputWindow.vue`:** Displays the output of code executed via Judge0.
-*   **`CollaborationPanel.vue`:** Shows a list of online collaborators and their cursor positions.
-*   **`Navbar.vue`:** Provides navigation, theme switching, and other global actions.
-*   **`OAuth2Callback.vue`:** Replaced with Firebase for Authentification.
-*   **`services/auth.js`:** Manages Firebase authentication related logic such as token refresh and generating authorization URL.
-*   **`store/modules/auth.js` (Vuex):** Manages the Firebase authentication state.
+*   **FileExplorer.vue:** Manages the file tree, allowing users to create, open, rename, and delete files.
+*   **CodeEditor.vue:** The core Monaco Editor component for real-time collaborative coding, now with ML-powered autocompletion using CodeBERT.
+*   **OutputWindow.vue:** Displays the output of code executed via Judge0.
+*   **CollaborationPanel.vue:** Shows a list of online collaborators and their cursor positions.
+*   **Navbar.vue:** Provides navigation, theme switching, and other global actions.
+*   **OAuth2Callback.vue:** Replaced with Firebase for Authentification.
+*   **services/auth.js:** Manages Firebase authentication related logic such as token refresh and generating authorization URL.
+*   **store/modules/auth.js (Vuex):** Manages the Firebase authentication state.
 
 ### Backend Architecture
 
 *   **Main Backend (Node.js):**
     *   Handles general API requests, user sessions (with Firebase), and potentially serves as a proxy to other services.
     *   API Endpoints:
-        *   `POST /api/token`:  (Removed since we are using Firebase)
-        *   `POST /api/refresh`: (Removed since we are using Firebase)
-        *   `GET /api/config` (Optional): Provides public configuration information to the frontend (e.g., Google Client ID).
-        *   `POST /files/content`: Saves file content to the server (currently stored as text blobs in PostgreSQL for the demo). - *Planned*
+        *   POST /api/token:  (Removed since we are using Firebase)
+        *   POST /api/refresh: (Removed since we are using Firebase)
+        *   GET /api/config (Optional): Provides public configuration information to the frontend (e.g., Google Client ID).
+        *   POST /files/content: Saves file content to the server (currently stored as text blobs in PostgreSQL for the demo). - *Planned*
 *   **Code Execution Service (Go):**
     *   Provides secure code execution in a sandboxed environment.
     *   API Endpoint:
-        *   `POST /api/execute`: Accepts code, language, and optional input, executes the code, and returns the output.
+        *   POST /api/execute: Accepts code, language, and optional input, executes the code, and returns the output.
 *   **ML Autocompletion Service (Go) - *Planned*:**
     *   Provides intelligent code suggestions using a pre-trained CodeBERT model.
     *   API Endpoint:
-        *   `POST /api/autocomplete`: Accepts code, cursor position, and language, and returns a list of autocompletion suggestions.
+        *   POST /api/autocomplete: Accepts code, cursor position, and language, and returns a list of autocompletion suggestions.
 *   **Real-Time Collaboration Server (Go or Node.js) - *Partially Implemented*:**
     *   Handles real-time document synchronization using Y.js and potentially other real-time events using Socket.IO.
-    *   May be implemented in Node.js (using `y-websocket`) or in Go (using `go-yjs` or an alternative technology if `go-yjs` is not viable).
+    *   May be implemented in Node.js (using y-websocket) or in Go (using go-yjs or an alternative technology if go-yjs is not viable).
 *   **WebSocket Events (Planned):**
-    *   `cursor-update`: Broadcasts real-time cursor position changes to all collaborators in the same session.
-    *   `file-update`: Synchronizes file content changes across all clients.
-    *   `output-update`: Shares the output of code execution with all collaborators.
+    *   cursor-update: Broadcasts real-time cursor position changes to all collaborators in the same session.
+    *   file-update: Synchronizes file content changes across all clients.
+    *   output-update: Shares the output of code execution with all collaborators.
 
 ## Acknowledgements
 
