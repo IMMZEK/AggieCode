@@ -1,0 +1,14 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cpp.go",
+        "go.go",
+        "java.go",
+        "javascript.go",
+        "python.go",
+    ],
+    importpath = "aggiecode.com/users/cesarmagana/documents/github/aggiecode/code-execution-service/packages/lang",
+    visibility = ["//visibility:public"],
+)

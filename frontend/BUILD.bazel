@@ -1,36 +1,89 @@
-load("@rules_nodejs//nodejs:defs.bzl", "npm_package")
-load("@npm//:vite/package_json.bzl", vite_bin = "bin") # Make sure vite is declared in root package.json or via npm_install
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
-# Install npm dependencies based on package.json and package-lock.json
-npm_package(
-    name = "npm",
-    package_json = "package.json",
-    package_lock_json = "package-lock.json",
-)
-
-# Define a target to run the Vite build process
-vite_bin.vite_binary(
-    name = "build",
-    args = ["build"],
-    data = [
+# Define frontend source files
+filegroup(
+    name = "frontend_srcs",
+    srcs = glob([
         "index.html",
-        "package.json",
-        "package-lock.json",
         "vite.config.js",
-        ":npm", # Depend on installed packages
-        # Removed "//:node_modules"
-        "//frontend/public",
-        "//frontend/src",
-    ],
-    node_modules = ":npm", # Point to the local npm installation
-    # Define the output directory for the build artifacts
-    output_dir = True,
+        "src/**/*",
+        "public/**/*",
+    ], allow_empty = True),
+    visibility = ["//visibility:public"],
 )
 
-# You might also want a target to run the dev server, e.g.:
-# vite_bin.vite_binary(
-#     name = "dev",
-#     args = ["dev"],
-#     data = [ ... ], # Similar dependencies as above
-#     node_modules = ":npm",
-# )
+# Create a JavaScript script for the Vite build
+write_file(
+    name = "vite_build_script",
+    out = "vite_build.js",
+    content = [
+        "const { execSync } = require('child_process');",
+        "const path = require('path');",
+        "const process = require('process');",
+        "",
+        "// Get workspace directory from env var",
+        "const workspaceDir = process.env.BUILD_WORKSPACE_DIRECTORY;",
+        "const frontendDir = path.join(workspaceDir, 'frontend');",
+        "",
+        "// Change to frontend directory and run vite build",
+        "process.chdir(frontendDir);",
+        "console.log('Building frontend with Vite...');",
+        "execSync('npm install @guolao/vue-monaco-editor', { stdio: 'inherit' });",
+        "execSync('npx vite build', { stdio: 'inherit' });",
+    ],
+)
+
+# Create a JavaScript script for the Vite dev server
+write_file(
+    name = "vite_dev_script",
+    out = "vite_dev.js",
+    content = [
+        "const { execSync } = require('child_process');",
+        "const path = require('path');",
+        "const process = require('process');",
+        "",
+        "// Get workspace directory from env var",
+        "const workspaceDir = process.env.BUILD_WORKSPACE_DIRECTORY;",
+        "const frontendDir = path.join(workspaceDir, 'frontend');",
+        "",
+        "// Change to frontend directory and run vite",
+        "process.chdir(frontendDir);",
+        "console.log('Starting Vite development server...');",
+        "execSync('npm install @guolao/vue-monaco-editor', { stdio: 'inherit' });",
+        "execSync('npx vite', { stdio: 'inherit' });",
+    ],
+)
+
+# Build target - runs the vite build script
+js_binary(
+    name = "build",
+    data = [
+        ":frontend_srcs",
+    ],
+    entry_point = ":vite_build.js",
+)
+
+# Development server target - runs the vite dev script
+js_binary(
+    name = "dev",
+    data = [
+        ":frontend_srcs",
+    ],
+    entry_point = ":vite_dev.js",
+)
+
+# Create a placeholder dist file
+write_file(
+    name = "placeholder_dist",
+    out = "placeholder.txt",
+    content = ["This file is a placeholder for the dist directory."],
+)
+
+# Create a package for distribution
+pkg_tar(
+    name = "dist_tar",
+    srcs = [":placeholder_dist"],
+    package_dir = "dist",
+)

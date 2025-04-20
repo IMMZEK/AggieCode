@@ -1,0 +1,9 @@
+# This file marks the directory as a Bazel package.
+# It can be used to define filegroups for source files if needed.
+
+# Define a filegroup containing all source files in this directory
+filegroup(
+    name = "src_files",
+    srcs = glob(["**/*"], exclude = ["BUILD.bazel"]),
+    visibility = ["//frontend:__pkg__"], # Allow frontend package to depend on this
+)
