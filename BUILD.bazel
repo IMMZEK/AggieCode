@@ -4,8 +4,6 @@ load("@gazelle//:def.bzl", "gazelle")
 # gazelle:prefix aggiecode.com/users/cesarmagana/documents/github/aggiecode
 gazelle(name = "gazelle")
 
-# Node.js setup will be handled within respective directories for now.
-
 exports_files([
     "package.json",
     "pnpm-lock.yaml",
