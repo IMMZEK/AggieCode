@@ -1,13 +1,14 @@
 package pkg
 
 import (
-	"code-execution-service/packages/lang"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"regexp"
 	"strings"
 	"sync"
+
+	"aggiecode.com/users/cesarmagana/documents/github/aggiecode/code-execution-service/packages/lang"
 
 	"golang.org/x/time/rate"
 )

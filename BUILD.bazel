@@ -1,0 +1,29 @@
+# Root BUILD file for AggieCode
+load("@gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix aggiecode.com/users/cesarmagana/documents/github/aggiecode
+gazelle(name = "gazelle")
+
+exports_files([
+    "package.json",
+    "pnpm-lock.yaml",
+    "requirements_lock.txt",
+])
+
+# Meta-target to build the entire application
+alias(
+    name = "aggiecode",
+    actual = "//frontend:dist_tar",
+    visibility = ["//visibility:public"],
+)
+
+# Build all components of the application
+filegroup(
+    name = "all",
+    srcs = [
+        "//backend:backend",
+        "//code-execution-service:code-execution-service",
+        "//frontend:dist_tar",
+    ],
+    visibility = ["//visibility:public"],
+)

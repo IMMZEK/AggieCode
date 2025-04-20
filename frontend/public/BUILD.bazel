@@ -1,0 +1,9 @@
+# This file marks the directory as a Bazel package.
+# It can be used to define filegroups for assets if needed.
+
+# Define a filegroup containing all files in this directory
+filegroup(
+    name = "public_files",
+    srcs = glob(["**/*"]),
+    visibility = ["//frontend:__pkg__"], # Allow frontend package to depend on this
+)

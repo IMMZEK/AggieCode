@@ -1,0 +1,27 @@
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
+
+# Define backend source files
+filegroup(
+    name = "backend_srcs",
+    srcs = glob([
+        "app.js",
+        "**/*.js",
+        "package.json",
+    ], allow_empty = True),
+    visibility = ["//visibility:public"],
+)
+
+# Create a simple script to run the backend
+filegroup(
+    name = "backend_runner",
+    srcs = ["app.js"],
+    visibility = ["//visibility:public"],
+)
+
+# Backend target
+js_binary(
+    name = "backend", 
+    data = [":backend_srcs"],
+    entry_point = "app.js",
+    visibility = ["//visibility:public"],
+)
