@@ -1,18 +1,39 @@
-load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 go_library(
-    name = "code_execution_service_lib",
-    srcs = ["main.go"],
-    importpath = "aggiecode.com/users/cesarmagana/documents/github/aggiecode/code-execution-service",
-    visibility = ["//visibility:private"],
+    name = "code-execution-service_lib",
+    srcs = [
+        "main.go",
+        # Add other .go files here if needed in the future
+    ],
+    importpath = "github.com/IMMZEK/AggieCode/code-execution-service",
+    visibility = [
+        "//visibility:private",
+    ],
     deps = [
-        "//code-execution-service/packages:packages",
-        "@com_github_gorilla_mux//:go_default_library",
+        "//code-execution-service/executor",
     ],
 )
 
 go_binary(
     name = "code-execution-service",
-    embed = [":code_execution_service_lib"],
+    embed = [":code-execution-service_lib"],
     visibility = ["//visibility:public"],
 )
+
+go_test(
+    name = "code-execution-service_test",
+    srcs = ["main_test.go"],
+    embed = [":code-execution-service_lib"],
+    deps = [
+        "//code-execution-service/executor",
+    ],
+)
+
+# Optional: Define a target to run the service with Docker available
+# This is a placeholder for future integration with Docker
+# sh_binary(
+#     name = "run_service",
+#     srcs = ["run.sh"], # You would create a simple run.sh script
+#     data = [":code-execution-service"],
+# )
