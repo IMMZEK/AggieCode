@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"aggiecode.com/users/cesarmagana/documents/github/aggiecode/code-execution-service/packages/lang"
+	"github.com/IMMZEK/AggieCode/code-execution-service/packages/lang"
 
 	"golang.org/x/time/rate"
 )

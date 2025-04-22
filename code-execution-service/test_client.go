@@ -1,5 +1,5 @@
-// Package main provides a simple test client for the Code Execution Service.
-package main
+// Package test_client provides a simple test client for the Code Execution Service.
+package test_client
 
 import (
 	"bytes"
@@ -10,104 +10,153 @@ import (
 	"time"
 )
 
-// Request structure matching the API
+// ExecuteRequest defines the structure for code execution requests.
 type ExecuteRequest struct {
 	Language string `json:"language"`
 	Code     string `json:"code"`
 	Stdin    string `json:"stdin,omitempty"`
+	Timeout  int    `json:"timeout,omitempty"`
 }
 
-// Response structure matching the API
+// ExecuteResponse defines the structure for code execution responses.
 type ExecuteResponse struct {
-	Stdout         string `json:"stdout"`
-	Stderr         string `json:"stderr"`
-	Error          string `json:"error,omitempty"`
+	Stdout          string `json:"stdout"`
+	Stderr          string `json:"stderr"`
+	Error           string `json:"error,omitempty"`
+	ErrorType       string `json:"error_type,omitempty"`
 	ExecutionTimeMs int64  `json:"execution_time_ms"`
 }
 
+// Test cases to execute
+var testCases = []struct {
+	Name     string
+	Language string
+	Code     string
+	Stdin    string
+	Timeout  int
+}{
+	{
+		Name:     "python",
+		Language: "python",
+		Code:     "print('Hello, World!')",
+	},
+	{
+		Name:     "python with input",
+		Language: "python",
+		Code:     "print(input('Enter something: '))",
+		Stdin:    "Test Input",
+	},
+	{
+		Name:     "javascript",
+		Language: "javascript",
+		Code:     "console.log('Hello from JavaScript');",
+	},
+	{
+		Name:     "go",
+		Language: "go",
+		Code: `package main
+
+import "fmt"
+
 func main() {
-	// Define test cases
-	testCases := []ExecuteRequest{
-		{
-			Language: "python",
-			Code:     "print('Hello, World!')",
-		},
-		{
-			Language: "python",
-			Code:     "print(input('Enter something: '))",
-			Stdin:    "Test Input",
-		},
-		{
-			Language: "javascript",
-			Code:     "console.log('Hello from JavaScript');",
-		},
-		{
-			Language: "go",
-			Code:     "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"Hello from Go\")\n}",
-		},
-	}
+	fmt.Println("Hello from Go")
+}`,
+	},
+	{
+		Name:     "timeout example",
+		Language: "python",
+		Code: `import time
+print("Starting long operation...")
+time.sleep(15)  # This should trigger a timeout
+print("Finished")`,
+		Timeout: 5, // Set a custom timeout of 5 seconds
+	},
+	{
+		Name:     "memory limit example",
+		Language: "python",
+		Code: `# This will attempt to allocate a large list to exceed memory limits
+data = [0] * 1000000000  # Try to allocate a very large list
+print("Allocated large memory block")`,
+	},
+	{
+		Name:     "error case",
+		Language: "python",
+		Code: `# This will generate a syntax error
+if True
+    print("Missing colon")`,
+	},
+}
 
-	// API endpoint
-	url := "http://localhost:8081/api/execute"
+// RunTests executes all the test cases against the code execution service
+func RunTests() {
+	// Get service URL from command line or use default
+	serviceURL := "http://localhost:8081/api/execute"
 	if len(os.Args) > 1 {
-		url = os.Args[1]
+		serviceURL = os.Args[1]
 	}
 
-	fmt.Printf("Testing Code Execution Service at %s\n\n", url)
+	fmt.Printf("Testing Code Execution Service at %s\n\n", serviceURL)
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	// Run tests
+	// Run each test case
 	for i, tc := range testCases {
-		fmt.Printf("Test Case %d: %s\n", i+1, tc.Language)
+		fmt.Printf("Test Case %d: %s\n", i+1, tc.Name)
 		fmt.Printf("Code: %s\n", tc.Code)
+
 		if tc.Stdin != "" {
 			fmt.Printf("Stdin: %s\n", tc.Stdin)
 		}
 
-		// Create request body
-		reqBody, err := json.Marshal(tc)
+		// Create the request
+		req := ExecuteRequest{
+			Language: tc.Language,
+			Code:     tc.Code,
+			Stdin:    tc.Stdin,
+			Timeout:  tc.Timeout,
+		}
+
+		// Convert to JSON
+		jsonData, err := json.Marshal(req)
 		if err != nil {
-			fmt.Printf("Error marshaling request: %v\n", err)
+			fmt.Printf("Error creating request JSON: %v\n\n", err)
 			continue
 		}
 
-		// Create request
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer(reqBody))
+		// Send the request
+		client := &http.Client{
+			Timeout: 60 * time.Second, // Client timeout for the entire request
+		}
+
+		resp, err := client.Post(serviceURL, "application/json", bytes.NewBuffer(jsonData))
 		if err != nil {
-			fmt.Printf("Error creating request: %v\n", err)
+			fmt.Printf("Error sending request: %v\n\n", err)
 			continue
 		}
-		req.Header.Set("Content-Type", "application/json")
 
-		// Send request
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Printf("Error sending request: %v\n", err)
-			continue
-		}
-		defer resp.Body.Close()
-
-		// Check response status
-		fmt.Printf("Status: %s\n", resp.Status)
-
-		// Parse response
-		var execResp ExecuteResponse
-		if err := json.NewDecoder(resp.Body).Decode(&execResp); err != nil {
+		// Decode the response
+		var result ExecuteResponse
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 			fmt.Printf("Error decoding response: %v\n", err)
+			resp.Body.Close()
+			fmt.Println()
 			continue
 		}
+		resp.Body.Close()
 
-		// Print response
-		fmt.Printf("Stdout: %s\n", execResp.Stdout)
-		if execResp.Stderr != "" {
-			fmt.Printf("Stderr: %s\n", execResp.Stderr)
+		// Print results
+		fmt.Printf("Status: %s\n", resp.Status)
+		if result.ErrorType != "" {
+			fmt.Printf("Error Type: %s\n", result.ErrorType)
 		}
-		if execResp.Error != "" {
-			fmt.Printf("Error: %s\n", execResp.Error)
+		if result.Error != "" {
+			fmt.Printf("Error: %s\n", result.Error)
 		}
-		fmt.Printf("Execution Time: %d ms\n\n", execResp.ExecutionTimeMs)
+		if result.Stdout != "" {
+			fmt.Printf("Stdout: %s\n", result.Stdout)
+		}
+		if result.Stderr != "" {
+			fmt.Printf("Stderr: %s\n", result.Stderr)
+		}
+		fmt.Printf("Execution Time: %d ms\n", result.ExecutionTimeMs)
+		fmt.Println()
 	}
 }

@@ -1,6 +1,6 @@
 module github.com/IMMZEK/AggieCode/code-execution-service
 
-go 1.22.0
+go 1.23.0
 
 toolchain go1.23.4
 
@@ -24,4 +24,5 @@ require (
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/time v0.11.0 // indirect
 )

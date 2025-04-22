@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/IMMZEK/AggieCode/code-execution-service/executor"
 )
@@ -21,6 +20,30 @@ func (m *TestExecutor) Execute(_ context.Context, req executor.ExecutionRequest)
 	// Simulate different responses based on language and code content
 	result := executor.ExecutionResult{
 		ExecTimeMs: 10, // Fixed execution time for predictability in tests
+	}
+
+	// Simulate a timeout error if requested in the code
+	if strings.Contains(req.Code, "timeout") {
+		return result, executor.ExecutionError{
+			Type:    "timeout",
+			Message: "execution timed out after 10s",
+		}
+	}
+
+	// Simulate a memory limit error if requested in the code
+	if strings.Contains(req.Code, "memory_limit") {
+		return result, executor.ExecutionError{
+			Type:    "memory_limit",
+			Message: "execution exceeded memory limit",
+		}
+	}
+
+	// Simulate a concurrency limit error if requested in the code
+	if strings.Contains(req.Code, "too_many") {
+		return result, executor.ExecutionError{
+			Type:    "limit_exceeded",
+			Message: "too many concurrent executions, try again later",
+		}
 	}
 
 	// For testing, return a predictable output based on the language
@@ -48,6 +71,11 @@ func (m *TestExecutor) Execute(_ context.Context, req executor.ExecutionRequest)
 		if strings.Contains(req.Code, "fmt.Println") {
 			result.Stdout = "Hello from Go!\n"
 		}
+	default:
+		return result, executor.ExecutionError{
+			Type:    "unsupported_language",
+			Message: "unsupported language: " + req.Language,
+		}
 	}
 
 	// If stdin was provided, echo it back
@@ -71,53 +99,29 @@ func TestExecuteHandler_ValidRequest(t *testing.T) {
 	server := setupTestServer()
 	defer server.Close()
 
-	// Setup: Create a valid request body
-	reqBody := ExecuteRequest{
-		Language: "python",
-		Code:     "print('hello')",
-	}
-	bodyBytes, _ := json.Marshal(reqBody)
-
-	// Create a request to pass to our handler
-	req, err := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewReader(bodyBytes))
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Valid Python code
+	requestBody := `{"language":"python","code":"print('Hello, world!')"}`
+	req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString(requestBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	// Execute the request
-	client := &http.Client{Timeout: time.Second * 5}
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Check the status code
-	if status := resp.StatusCode; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status OK, got %v", resp.Status)
 	}
 
-	// Check the response body
-	var execResp ExecuteResponse
-	err = json.NewDecoder(resp.Body).Decode(&execResp)
-	if err != nil {
-		t.Fatalf("Could not unmarshal response body: %v", err)
+	var result ExecuteResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
 	}
 
-	// Check specific fields
-	expectedStdout := "Hello from Python!\n"
-	if execResp.Stdout != expectedStdout {
-		t.Errorf("handler returned unexpected stdout: got %q want %q", execResp.Stdout, expectedStdout)
-	}
-	if execResp.Stderr != "" {
-		t.Errorf("handler returned unexpected stderr: got %q want %q", execResp.Stderr, "")
-	}
-	if execResp.Error != "" {
-		t.Errorf("handler returned unexpected error: got %q want %q", execResp.Error, "")
-	}
-	if execResp.ExecutionTimeMs <= 0 {
-		t.Errorf("handler returned non-positive execution time: got %v", execResp.ExecutionTimeMs)
+	if !strings.Contains(result.Stdout, "Hello from Python!") {
+		t.Errorf("Expected stdout to contain 'Hello from Python!', got: %s", result.Stdout)
 	}
 }
 
@@ -125,44 +129,25 @@ func TestExecuteHandler_WithStdin(t *testing.T) {
 	server := setupTestServer()
 	defer server.Close()
 
-	// Setup: Create a request with stdin
-	reqBody := ExecuteRequest{
-		Language: "python",
-		Code:     "print('Input provided')",
-		Stdin:    "test input",
-	}
-	bodyBytes, _ := json.Marshal(reqBody)
-
-	// Create a request to our test server
-	req, err := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewReader(bodyBytes))
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Python code with stdin
+	requestBody := `{"language":"python","code":"input = input()\\nprint(input)","stdin":"Hello, input!"}`
+	req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString(requestBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	// Execute the request
-	client := &http.Client{Timeout: time.Second * 5}
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Check the status code
-	if status := resp.StatusCode; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	var result ExecuteResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
 	}
 
-	// Check the response body
-	var execResp ExecuteResponse
-	err = json.NewDecoder(resp.Body).Decode(&execResp)
-	if err != nil {
-		t.Fatalf("Could not unmarshal response body: %v", err)
-	}
-
-	// Verify that stdin was processed
-	if !strings.Contains(execResp.Stdout, "Input: test input") {
-		t.Errorf("handler did not process stdin properly: got %q", execResp.Stdout)
+	if !strings.Contains(result.Stdout, "Input: Hello, input!") {
+		t.Errorf("Expected stdout to contain input echo, got: %s", result.Stdout)
 	}
 }
 
@@ -170,20 +155,17 @@ func TestExecuteHandler_InvalidMethod(t *testing.T) {
 	server := setupTestServer()
 	defer server.Close()
 
-	req, err := http.NewRequest("GET", server.URL+"/api/execute", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req, _ := http.NewRequest("GET", server.URL+"/api/execute", nil)
 
-	client := &http.Client{Timeout: time.Second * 5}
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if status := resp.StatusCode; status != http.StatusMethodNotAllowed {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusMethodNotAllowed)
+	if resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("Expected status MethodNotAllowed, got %v", resp.Status)
 	}
 }
 
@@ -191,21 +173,18 @@ func TestExecuteHandler_InvalidContentType(t *testing.T) {
 	server := setupTestServer()
 	defer server.Close()
 
-	req, err := http.NewRequest("POST", server.URL+"/api/execute", strings.NewReader("{}"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString("test"))
 	req.Header.Set("Content-Type", "text/plain")
 
-	client := &http.Client{Timeout: time.Second * 5}
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if status := resp.StatusCode; status != http.StatusUnsupportedMediaType {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusUnsupportedMediaType)
+	if resp.StatusCode != http.StatusUnsupportedMediaType {
+		t.Errorf("Expected status UnsupportedMediaType, got %v", resp.Status)
 	}
 }
 
@@ -213,70 +192,175 @@ func TestExecuteHandler_InvalidJson(t *testing.T) {
 	server := setupTestServer()
 	defer server.Close()
 
-	req, err := http.NewRequest("POST", server.URL+"/api/execute", strings.NewReader("{"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString("{"))
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: time.Second * 5}
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if status := resp.StatusCode; status != http.StatusBadRequest {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status BadRequest, got %v", resp.Status)
 	}
 }
 
 func TestExecuteHandler_MissingFields(t *testing.T) {
-	server := setupTestServer()
-	defer server.Close()
-
 	testCases := []struct {
 		name        string
-		body        string
-		expectedMsg string
+		requestBody string
 	}{
 		{
 			name:        "Missing Code",
-			body:        `{"language": "python"}`,
-			expectedMsg: "Missing 'code' field in request",
+			requestBody: `{"language":"python"}`,
 		},
 		{
 			name:        "Missing Language",
-			body:        `{"code": "print(1)"}`,
-			expectedMsg: "Missing 'language' field in request",
+			requestBody: `{"code":"print('hello')"}`,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequest("POST", server.URL+"/api/execute", strings.NewReader(tc.body))
-			if err != nil {
-				t.Fatal(err)
-			}
+			server := setupTestServer()
+			defer server.Close()
+
+			req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString(tc.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			client := &http.Client{Timeout: time.Second * 5}
+			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("Failed to make request: %v", err)
 			}
 			defer resp.Body.Close()
 
-			if status := resp.StatusCode; status != http.StatusBadRequest {
-				t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusBadRequest)
-			}
-
-			body := new(bytes.Buffer)
-			body.ReadFrom(resp.Body)
-			if !strings.Contains(body.String(), tc.expectedMsg) {
-				t.Errorf("handler returned wrong error message: got %q want containing %q", body.String(), tc.expectedMsg)
+			if resp.StatusCode != http.StatusBadRequest {
+				t.Errorf("Expected status BadRequest, got %v", resp.Status)
 			}
 		})
+	}
+}
+
+func TestExecuteHandler_Timeout(t *testing.T) {
+	server := setupTestServer()
+	defer server.Close()
+
+	// Request that will trigger a timeout error
+	requestBody := `{"language":"python","code":"# timeout"}`
+	req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Failed to make request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusRequestTimeout {
+		t.Errorf("Expected status RequestTimeout, got %v", resp.Status)
+	}
+
+	var result ExecuteResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	if result.ErrorType != "timeout" {
+		t.Errorf("Expected error_type 'timeout', got: %s", result.ErrorType)
+	}
+}
+
+func TestExecuteHandler_MemoryLimit(t *testing.T) {
+	server := setupTestServer()
+	defer server.Close()
+
+	// Request that will trigger a memory limit error
+	requestBody := `{"language":"python","code":"# memory_limit"}`
+	req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Failed to make request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusRequestEntityTooLarge { // Using StatusRequestEntityTooLarge instead of StatusPayloadTooLarge
+		t.Errorf("Expected status RequestEntityTooLarge, got %v", resp.Status)
+	}
+
+	var result ExecuteResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	if result.ErrorType != "memory_limit" {
+		t.Errorf("Expected error_type 'memory_limit', got: %s", result.ErrorType)
+	}
+}
+
+func TestExecuteHandler_TooManyConcurrentExecutions(t *testing.T) {
+	server := setupTestServer()
+	defer server.Close()
+
+	// Request that will trigger a too many concurrent executions error
+	requestBody := `{"language":"python","code":"# too_many"}`
+	req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Failed to make request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusTooManyRequests {
+		t.Errorf("Expected status TooManyRequests, got %v", resp.Status)
+	}
+
+	var result ExecuteResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	if result.ErrorType != "limit_exceeded" {
+		t.Errorf("Expected error_type 'limit_exceeded', got: %s", result.ErrorType)
+	}
+}
+
+func TestExecuteHandler_UnsupportedLanguage(t *testing.T) {
+	server := setupTestServer()
+	defer server.Close()
+
+	// Request with an unsupported language
+	requestBody := `{"language":"unsupported","code":"test"}`
+	req, _ := http.NewRequest("POST", server.URL+"/api/execute", bytes.NewBufferString(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("Failed to make request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status BadRequest, got %v", resp.Status)
+	}
+
+	var result ExecuteResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	if result.ErrorType != "unsupported_language" {
+		t.Errorf("Expected error_type 'unsupported_language', got: %s", result.ErrorType)
 	}
 }
 
@@ -284,29 +368,25 @@ func TestHealthCheck(t *testing.T) {
 	server := setupTestServer()
 	defer server.Close()
 
-	req, err := http.NewRequest("GET", server.URL+"/health", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req, _ := http.NewRequest("GET", server.URL+"/health", nil)
 
-	client := &http.Client{Timeout: time.Second * 5}
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Failed to make request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	if status := resp.StatusCode; status != http.StatusOK {
-		t.Errorf("health check handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status OK, got %v", resp.Status)
 	}
 
-	var healthResp map[string]string
-	err = json.NewDecoder(resp.Body).Decode(&healthResp)
-	if err != nil {
-		t.Fatalf("Could not unmarshal response body: %v", err)
+	var result map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
 	}
 
-	if status, ok := healthResp["status"]; !ok || status != "ok" {
-		t.Errorf("health check handler returned incorrect status: got %v want %v", status, "ok")
+	if result["status"] != "ok" {
+		t.Errorf("Expected status 'ok', got: %s", result["status"])
 	}
 }

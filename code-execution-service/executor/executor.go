@@ -9,12 +9,25 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/strslice"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+)
+
+// Default resource limits
+const (
+	DefaultMemoryLimit     = 256 * 1024 * 1024 // 256MB
+	DefaultCPULimit        = 1.0               // 1 CPU core
+	DefaultExecutionTime   = 10 * time.Second  // 10 seconds
+	MaxExecutionTime       = 30 * time.Second  // 30 seconds max
+	DefaultPidsLimit       = int64(50)         // Max number of processes
+	DefaultConcurrentLimit = 10                // Max concurrent executions
+	DefaultNetworkPolicy   = "none"            // Disable networking
 )
 
 // CodeExecutionService defines the interface for code execution
@@ -31,6 +44,13 @@ var SupportedLanguages = map[string]string{
 	"go":         "go-executor",
 }
 
+// LanguageCompilers defines which languages need compilation
+var LanguageCompilers = map[string]bool{
+	"cpp":  true,
+	"java": true,
+	"go":   true, // go run does compilation internally
+}
+
 // ExecutionRequest encapsulates all information needed to execute code
 type ExecutionRequest struct {
 	Language string
@@ -45,6 +65,16 @@ type ExecutionResult struct {
 	Stderr     string
 	Error      string
 	ExecTimeMs int64
+}
+
+// ExecutionError represents specific error types that can occur during execution
+type ExecutionError struct {
+	Type    string // "timeout", "memory", "runtime", "compilation", etc.
+	Message string
+}
+
+func (e ExecutionError) Error() string {
+	return fmt.Sprintf("%s error: %s", e.Type, e.Message)
 }
 
 // MockExecutor provides a fallback execution mode when Docker is not available
@@ -127,25 +157,58 @@ func extractPrintContent(code, language string) string {
 
 // CodeExecutor handles code execution in Docker containers
 type CodeExecutor struct {
-	dockerClient *client.Client
-	imagePrefix  string // Prefix for Docker images, e.g. "aggiecode/"
-	fallbackMode bool   // Use fallback mode when Docker is not available
-	mockExecutor CodeExecutionService // Mock executor for fallback mode
+	dockerClient       *client.Client
+	imagePrefix        string               // Prefix for Docker images, e.g. "aggiecode/"
+	fallbackMode       bool                 // Use fallback mode when Docker is not available
+	mockExecutor       CodeExecutionService // Mock executor for fallback mode
+	concurrentLimit    int                  // Maximum number of concurrent executions
+	executionSemaphore *chan struct{}       // Semaphore to limit concurrent executions
+	executionLock      sync.Mutex           // Lock to protect concurrent access to the semaphore
 }
 
-// NewExecutor creates a new CodeExecutor instance
+// ExecutorConfig provides configuration options for the CodeExecutor
+type ExecutorConfig struct {
+	ImagePrefix     string        // Prefix for Docker images
+	ConcurrentLimit int           // Maximum number of concurrent executions
+	DefaultTimeout  time.Duration // Default timeout for code execution
+}
+
+// NewExecutor creates a new CodeExecutor instance with default configuration
 func NewExecutor(imagePrefix string) (*CodeExecutor, error) {
+	return NewExecutorWithConfig(ExecutorConfig{
+		ImagePrefix:     imagePrefix,
+		ConcurrentLimit: DefaultConcurrentLimit,
+		DefaultTimeout:  DefaultExecutionTime,
+	})
+}
+
+// NewExecutorWithConfig creates a new CodeExecutor instance with the given configuration
+func NewExecutorWithConfig(config ExecutorConfig) (*CodeExecutor, error) {
+	// Set default values if not provided
+	if config.ConcurrentLimit <= 0 {
+		config.ConcurrentLimit = DefaultConcurrentLimit
+	}
+
+	if config.DefaultTimeout <= 0 {
+		config.DefaultTimeout = DefaultExecutionTime
+	}
+
 	// Try to create Docker client
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+
+	// Create semaphore for limiting concurrent executions
+	semaphore := make(chan struct{}, config.ConcurrentLimit)
 
 	if err != nil {
 		// Docker client creation failed, use fallback mode
 		fmt.Println("WARNING: Could not create Docker client, using fallback mode")
 		return &CodeExecutor{
-			dockerClient: nil,
-			imagePrefix:  imagePrefix,
-			fallbackMode: true,
-			mockExecutor: &MockExecutor{},
+			dockerClient:       nil,
+			imagePrefix:        config.ImagePrefix,
+			fallbackMode:       true,
+			mockExecutor:       &MockExecutor{},
+			concurrentLimit:    config.ConcurrentLimit,
+			executionSemaphore: &semaphore,
 		}, nil
 	}
 
@@ -155,18 +218,22 @@ func NewExecutor(imagePrefix string) (*CodeExecutor, error) {
 		// Docker daemon is not running, use fallback mode
 		fmt.Println("WARNING: Docker daemon is not running, using fallback mode")
 		return &CodeExecutor{
-			dockerClient: nil,
-			imagePrefix:  imagePrefix,
-			fallbackMode: true,
-			mockExecutor: &MockExecutor{},
+			dockerClient:       nil,
+			imagePrefix:        config.ImagePrefix,
+			fallbackMode:       true,
+			mockExecutor:       &MockExecutor{},
+			concurrentLimit:    config.ConcurrentLimit,
+			executionSemaphore: &semaphore,
 		}, nil
 	}
 
 	return &CodeExecutor{
-		dockerClient: cli,
-		imagePrefix:  imagePrefix,
-		fallbackMode: false,
-		mockExecutor: nil,
+		dockerClient:       cli,
+		imagePrefix:        config.ImagePrefix,
+		fallbackMode:       false,
+		mockExecutor:       nil,
+		concurrentLimit:    config.ConcurrentLimit,
+		executionSemaphore: &semaphore,
 	}, nil
 }
 
@@ -177,13 +244,53 @@ func (e *CodeExecutor) Execute(ctx context.Context, req ExecutionRequest) (Execu
 		return e.mockExecutor.Execute(ctx, req)
 	}
 
+	// Validate the timeout
+	if req.Timeout <= 0 {
+		req.Timeout = DefaultExecutionTime
+	} else if req.Timeout > MaxExecutionTime {
+		req.Timeout = MaxExecutionTime
+	}
+
+	// Acquire semaphore to limit concurrent executions
+	e.executionLock.Lock()
+	select {
+	case *e.executionSemaphore <- struct{}{}:
+		// Successfully acquired semaphore
+		e.executionLock.Unlock()
+		defer func() {
+			// Release semaphore when done
+			<-*e.executionSemaphore
+		}()
+	case <-ctx.Done():
+		// Context canceled while waiting for semaphore
+		e.executionLock.Unlock()
+		return ExecutionResult{}, ExecutionError{
+			Type:    "timeout",
+			Message: "execution queue is full, try again later",
+		}
+	default:
+		// Semaphore channel is full
+		e.executionLock.Unlock()
+		return ExecutionResult{}, ExecutionError{
+			Type:    "limit_exceeded",
+			Message: "too many concurrent executions, try again later",
+		}
+	}
+
+	// Create a timeout context for the execution
+	execCtx, cancel := context.WithTimeout(ctx, req.Timeout)
+	defer cancel()
+
 	startTime := time.Now()
 	result := ExecutionResult{}
 
 	// Check if language is supported
 	imageName, supported := SupportedLanguages[req.Language]
 	if !supported {
-		return result, fmt.Errorf("unsupported language: %s", req.Language)
+		return result, ExecutionError{
+			Type:    "unsupported_language",
+			Message: fmt.Sprintf("unsupported language: %s", req.Language),
+		}
 	}
 
 	// Add image prefix if provided
@@ -214,28 +321,58 @@ func (e *CodeExecutor) Execute(ctx context.Context, req ExecutionRequest) (Execu
 	}
 
 	// Create and run the container
-	containerID, err := e.createAndStartContainer(ctx, imageName, tempDir, filename, stdinFile)
+	containerID, err := e.createAndStartContainer(execCtx, imageName, tempDir, filename, stdinFile, req.Language)
 	if err != nil {
+		if execCtx.Err() == context.DeadlineExceeded {
+			return result, ExecutionError{
+				Type:    "timeout",
+				Message: fmt.Sprintf("container creation timed out after %v", req.Timeout),
+			}
+		}
 		return result, fmt.Errorf("container execution failed: %w", err)
 	}
-	defer e.cleanupContainer(ctx, containerID)
+	defer e.cleanupContainer(context.Background(), containerID)
 
 	// Wait for the container to finish with timeout
-	statusCh, errCh := e.dockerClient.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
+	statusCh, errCh := e.dockerClient.ContainerWait(execCtx, containerID, container.WaitConditionNotRunning)
 	var statusCode int64
+
 	select {
 	case err := <-errCh:
+		if execCtx.Err() == context.DeadlineExceeded {
+			// Context deadline exceeded - execution timed out
+			return result, ExecutionError{
+				Type:    "timeout",
+				Message: fmt.Sprintf("execution timed out after %v", req.Timeout),
+			}
+		}
 		if err != nil {
 			return result, fmt.Errorf("error waiting for container: %w", err)
 		}
 	case status := <-statusCh:
 		statusCode = status.StatusCode
-	case <-time.After(req.Timeout):
-		return result, fmt.Errorf("execution timed out after %v", req.Timeout)
+	case <-execCtx.Done():
+		// Context canceled or timed out
+		if execCtx.Err() == context.DeadlineExceeded {
+			return result, ExecutionError{
+				Type:    "timeout",
+				Message: fmt.Sprintf("execution timed out after %v", req.Timeout),
+			}
+		}
+		return result, fmt.Errorf("execution canceled: %v", execCtx.Err())
+	}
+
+	// Check if the container was killed due to OOM (out of memory)
+	containerJSON, err := e.dockerClient.ContainerInspect(context.Background(), containerID)
+	if err == nil && containerJSON.State != nil && containerJSON.State.OOMKilled {
+		return result, ExecutionError{
+			Type:    "memory_limit",
+			Message: "execution exceeded memory limit",
+		}
 	}
 
 	// Get container logs
-	stdout, stderr, err := e.getContainerLogs(ctx, containerID)
+	stdout, stderr, err := e.getContainerLogs(context.Background(), containerID)
 	if err != nil {
 		return result, fmt.Errorf("failed to get container logs: %w", err)
 	}
@@ -247,73 +384,63 @@ func (e *CodeExecutor) Execute(ctx context.Context, req ExecutionRequest) (Execu
 
 	// Handle non-zero exit codes
 	if statusCode != 0 {
-		result.Error = fmt.Sprintf("Process exited with code %d", statusCode)
+		// Check if this is a compilation error (for compiled languages)
+		if needsCompilation, ok := LanguageCompilers[req.Language]; ok && needsCompilation {
+			if strings.Contains(stderr, "error") || strings.Contains(stderr, "Error") {
+				result.Error = fmt.Sprintf("Compilation error (exit code %d)", statusCode)
+			} else {
+				result.Error = fmt.Sprintf("Runtime error (exit code %d)", statusCode)
+			}
+		} else {
+			result.Error = fmt.Sprintf("Process exited with code %d", statusCode)
+		}
 	}
 
 	return result, nil
 }
 
-// writeCodeFile writes the code to the appropriate file based on language
-func (e *CodeExecutor) writeCodeFile(dir, language, code string) (string, error) {
-	var filename string
-
-	switch language {
-	case "python":
-		filename = filepath.Join(dir, "main.py")
-	case "javascript":
-		filename = filepath.Join(dir, "main.js")
-	case "cpp":
-		filename = filepath.Join(dir, "main.cpp")
-	case "java":
-		// For Java, we need to use a class name of "Main"
-		filename = filepath.Join(dir, "Main.java")
-		// Check if the code contains a public class that's not named Main
-		// This is a simplified check and may not catch all cases
-		if !bytes.Contains([]byte(code), []byte("class Main")) {
-			// Wrap the code in a Main class if it doesn't define one
-			code = fmt.Sprintf("public class Main {\n    %s\n}", code)
-		}
-	case "go":
-		filename = filepath.Join(dir, "main.go")
-	default:
-		return "", fmt.Errorf("unsupported language for file creation: %s", language)
-	}
-
-	return filename, ioutil.WriteFile(filename, []byte(code), 0644)
-}
-
 // createAndStartContainer creates and starts a Docker container for code execution
-func (e *CodeExecutor) createAndStartContainer(ctx context.Context, imageName, tempDir, codeFile, stdinFile string) (string, error) {
+func (e *CodeExecutor) createAndStartContainer(ctx context.Context, imageName, tempDir, codeFile, stdinFile, language string) (string, error) {
 	// Prepare mount for code directory
 	mounts := []mount.Mount{
 		{
 			Type:     mount.TypeBind,
 			Source:   tempDir,
 			Target:   "/code",
-			ReadOnly: true, // Mount as read-only for security
+			ReadOnly: false, // Enable writing for compilation outputs
 		},
 	}
+
+	// Set up command based on language
+	cmd := e.buildCommand(filepath.Base(codeFile), filepath.Base(stdinFile), language)
 
 	// Create container configuration
 	config := &container.Config{
 		Image:      imageName,
-		Cmd:        e.buildCommand(filepath.Base(codeFile), filepath.Base(stdinFile)),
+		Cmd:        cmd,
 		Tty:        false,
 		WorkingDir: "/code", // Set working directory
 	}
 
+	// Convert CPU limit from core count to nano-CPUs
+	nanoCPUs := int64(DefaultCPULimit * 1e9)
+
+	// Store our pids limit
+	pidsLimit := DefaultPidsLimit
+
 	// Create host configuration with security settings
 	hostConfig := &container.HostConfig{
-		Mounts:      mounts,
-		NetworkMode: container.NetworkMode("none"), // Disable networking
+		Mounts:         mounts,
+		NetworkMode:    container.NetworkMode(DefaultNetworkPolicy), // Disable networking
+		ReadonlyRootfs: true,                                        // Read-only filesystem for security
 		Resources: container.Resources{
-			Memory:    256 * 1024 * 1024, // 256MB
-			CPUShares: 512,
+			Memory:    DefaultMemoryLimit, // Memory limit
+			NanoCPUs:  nanoCPUs,           // CPU limit
+			PidsLimit: &pidsLimit,         // Process limit
 		},
-		ReadonlyRootfs: true, // Read-only filesystem for security
 	}
 
-	// Create the container
+	// Create the container with updated API
 	resp, err := e.dockerClient.ContainerCreate(ctx, config, hostConfig, nil, nil, "")
 	if err != nil {
 		return "", err
@@ -328,51 +455,92 @@ func (e *CodeExecutor) createAndStartContainer(ctx context.Context, imageName, t
 }
 
 // buildCommand constructs the command to run based on the language and files
-func (e *CodeExecutor) buildCommand(codeFile, stdinFile string) []string {
-	// Extract language from filename
-	ext := filepath.Ext(codeFile)
-	var cmd []string
+func (e *CodeExecutor) buildCommand(codeFile, stdinFile, language string) []string {
+	var cmd strslice.StrSlice
 
-	switch ext {
-	case ".py":
-		cmd = []string{"python3", codeFile}
-	case ".js":
-		cmd = []string{"node", codeFile}
-	case ".cpp":
-		// For C++, we need to compile first, then run
-		// This is handled in the container's entrypoint script
-		cmd = []string{codeFile}
-	case ".java":
-		// For Java, we need to compile first, then run
-		// This is handled in the container's entrypoint script
-		cmd = []string{codeFile}
-	case ".go":
+	switch language {
+	case "python":
+		if stdinFile != "" {
+			// Use shell to handle redirection
+			cmd = strslice.StrSlice{"/bin/sh", "-c", fmt.Sprintf("python3 %s < %s", codeFile, stdinFile)}
+		} else {
+			cmd = strslice.StrSlice{"python3", codeFile}
+		}
+	case "javascript":
+		if stdinFile != "" {
+			cmd = strslice.StrSlice{"/bin/sh", "-c", fmt.Sprintf("node %s < %s", codeFile, stdinFile)}
+		} else {
+			cmd = strslice.StrSlice{"node", codeFile}
+		}
+	case "cpp":
+		// For C++, we use the entrypoint script in the container
+		if stdinFile != "" {
+			cmd = strslice.StrSlice{"/bin/sh", "-c", fmt.Sprintf("./%s < %s", codeFile, stdinFile)}
+		} else {
+			cmd = strslice.StrSlice{codeFile}
+		}
+	case "java":
+		// For Java, we use the entrypoint script in the container
+		if stdinFile != "" {
+			cmd = strslice.StrSlice{"/bin/sh", "-c", fmt.Sprintf("./%s < %s", codeFile, stdinFile)}
+		} else {
+			cmd = strslice.StrSlice{codeFile}
+		}
+	case "go":
 		// For Go, we use 'go run'
-		cmd = []string{"go", "run", codeFile}
-	}
-
-	// If stdin file is provided, add it to the command
-	if stdinFile != "" {
-		cmd = append(cmd, "<", stdinFile)
+		if stdinFile != "" {
+			cmd = strslice.StrSlice{"/bin/sh", "-c", fmt.Sprintf("go run %s < %s", codeFile, stdinFile)}
+		} else {
+			cmd = strslice.StrSlice{"go", "run", codeFile}
+		}
+	default:
+		// Default to executing the file directly
+		if stdinFile != "" {
+			cmd = strslice.StrSlice{"/bin/sh", "-c", fmt.Sprintf("%s < %s", codeFile, stdinFile)}
+		} else {
+			cmd = strslice.StrSlice{codeFile}
+		}
 	}
 
 	return cmd
 }
 
-// getContainerLogs fetches stdout and stderr from a container
+// writeCodeFile writes the code to an appropriate file based on the language
+func (e *CodeExecutor) writeCodeFile(tempDir, language, code string) (string, error) {
+	var filename string
+
+	switch language {
+	case "python":
+		filename = filepath.Join(tempDir, "main.py")
+	case "javascript":
+		filename = filepath.Join(tempDir, "main.js")
+	case "cpp":
+		filename = filepath.Join(tempDir, "main.cpp")
+	case "java":
+		filename = filepath.Join(tempDir, "Main.java")
+	case "go":
+		filename = filepath.Join(tempDir, "main.go")
+	default:
+		// Default to a generic name
+		filename = filepath.Join(tempDir, "main.txt")
+	}
+
+	return filename, ioutil.WriteFile(filename, []byte(code), 0644)
+}
+
+// getContainerLogs retrieves the stdout and stderr from the container
 func (e *CodeExecutor) getContainerLogs(ctx context.Context, containerID string) (string, string, error) {
-	// Get container logs
-	options := container.LogsOptions{
+	// Get logs from the container
+	reader, err := e.dockerClient.ContainerLogs(ctx, containerID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
-	}
-	reader, err := e.dockerClient.ContainerLogs(ctx, containerID, options)
+	})
 	if err != nil {
 		return "", "", err
 	}
 	defer reader.Close()
 
-	// Docker multiplexes stdout and stderr, so we need to separate them
+	// Separate stdout and stderr
 	var stdout, stderr bytes.Buffer
 	_, err = stdcopy.StdCopy(&stdout, &stderr, reader)
 	if err != nil {
@@ -382,18 +550,18 @@ func (e *CodeExecutor) getContainerLogs(ctx context.Context, containerID string)
 	return stdout.String(), stderr.String(), nil
 }
 
-// cleanupContainer stops and removes a container
+// cleanupContainer removes the container after execution
 func (e *CodeExecutor) cleanupContainer(ctx context.Context, containerID string) {
-	// Stop the container (timeout after 5 seconds)
-	stopTimeout := 5
-	stopOptions := container.StopOptions{
-		Timeout: &stopTimeout,
+	// First try to stop the container gracefully
+	stopTimeout := 1 // 1 second timeout for stopping
+	err := e.dockerClient.ContainerStop(ctx, containerID, container.StopOptions{Timeout: &stopTimeout})
+	if err != nil {
+		// If stopping fails, try to kill it
+		e.dockerClient.ContainerKill(ctx, containerID, "SIGKILL")
 	}
-	e.dockerClient.ContainerStop(ctx, containerID, stopOptions)
 
 	// Remove the container
-	removeOptions := container.RemoveOptions{
+	e.dockerClient.ContainerRemove(ctx, containerID, container.RemoveOptions{
 		Force: true,
-	}
-	e.dockerClient.ContainerRemove(ctx, containerID, removeOptions)
+	})
 }
