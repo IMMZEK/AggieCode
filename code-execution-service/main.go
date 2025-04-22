@@ -75,11 +75,36 @@ func main() {
 		"concurrent_limit", executorConfig.ConcurrentLimit,
 		"default_timeout", executorConfig.DefaultTimeout)
 
+	// Try to start the server on the specified port
 	err = server.ListenAndServe()
+
+	// Check if the error is due to the port being in use
+	if err != nil && isPortInUseError(err) {
+		// Try to find an available port
+		portNum, err := strconv.Atoi(port)
+		if err == nil {
+			for i := 1; i <= 10; i++ { // Try up to 10 alternative ports
+				altPort := portNum + i
+				slog.Info("Trying alternative port", "port", altPort)
+
+				server.Addr = fmt.Sprintf(":%d", altPort)
+				err = server.ListenAndServe()
+				if err == nil || !isPortInUseError(err) {
+					break
+				}
+			}
+		}
+	}
+
 	if err != nil {
 		slog.Error("Server failed to start", "error", err)
 		os.Exit(1)
 	}
+}
+
+// Helper function to check if the error is due to the port being in use
+func isPortInUseError(err error) bool {
+	return err != nil && (err.Error() == "bind: address already in use" || err.Error() == "listen tcp: address already in use")
 }
 
 // Helper function to get concurrent limit from environment
