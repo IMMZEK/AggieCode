@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "executor",
+    srcs = ["executor.go"],
+    importpath = "github.com/IMMZEK/AggieCode/code-execution-service/executor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_docker_docker//api/types/container:container",
+        "@com_github_docker_docker//api/types/mount:mount",
+        "@com_github_docker_docker//client:client",
+        "@com_github_docker_docker//pkg/stdcopy:stdcopy",
+    ],
+)
+
+go_test(
+    name = "executor_test",
+    srcs = ["executor_test.go"],
+    embed = [":executor"],
+    deps = [
+        # Add test dependencies here if needed
+    ],
+)
